@@ -43,10 +43,10 @@ package main
 
 import (
 	"database/sql"
-    _ "github.com/viant/bigquery"
     "fmt"
 	"context"
     "log"
+   _ "github.com/viant/bigquery"
 )
 
 
