@@ -31,7 +31,7 @@ The BigQuery driver accepts the following DSN
       - scopes
   
  
-Since this library uses [google.golang.org/api/bigquery/v2](google.golang.org/api/bigquery/v2) 
+Since this library uses [Google Cloud API](google.golang.org/api/bigquery/v2) 
 you can pass your credentials via GOOGLE_APPLICATION_CREDENTIALS environment variable.
 
 ## Usage:
