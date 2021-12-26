@@ -32,7 +32,7 @@ func testDatabaseSQLClientQuery(projectID, SQL string, repeat int, values []inte
 			return 0, err
 		}
 		for i, v := range values { //runs only once per test
-			if reflect.TypeOf(v) !=  types[i].ScanType() {
+			if reflect.TypeOf(v) != types[i].ScanType() {
 				values[i] = reflect.New(types[i].ScanType()).Interface()
 			}
 		}
@@ -50,4 +50,3 @@ func testDatabaseSQLClientQuery(projectID, SQL string, repeat int, values []inte
 	}
 	return time.Now().Sub(started), nil
 }
-

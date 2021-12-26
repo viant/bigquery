@@ -25,7 +25,6 @@ func Benchmark_Primitive_SQLDriver(b *testing.B) {
 	benchmark(b, false, 0)
 }
 
-
 func Benchmark_Complex_GCPClient(b *testing.B) {
 	b.ReportAllocs()
 	benchmark(b, true, 1)
@@ -37,17 +36,16 @@ func Benchmark_Complex_SQLDriver(b *testing.B) {
 }
 
 type Localized struct {
-	Text string
-	Language string
+	Text      string
+	Language  string
 	Truncated bool
 }
 
-
 var testCases = []struct {
 	description string
-	SQL        string
-	projection []interface{}
-	repeat     int
+	SQL         string
+	projection  []interface{}
+	repeat      int
 }{
 	{
 		description: "primitive types",

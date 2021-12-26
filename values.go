@@ -9,7 +9,7 @@ import (
 //Values represents value slice
 type Values []driver.Value
 
-//QueryParameter convers value to query parameters
+//QueryParameter converts value to query parameters
 func (v Values) QueryParameter() ([]*bigquery.QueryParameter, error) {
 	var result = make([]*bigquery.QueryParameter, len(v))
 	for i := range v {
@@ -26,7 +26,7 @@ func (v Values) QueryParameter() ([]*bigquery.QueryParameter, error) {
 //NamedValues represents name values slice
 type NamedValues []driver.NamedValue
 
-//QueryParameter convers value to query parameters
+//QueryParameter converts value to query parameters
 func (v NamedValues) QueryParameter() ([]*bigquery.QueryParameter, error) {
 	var result = make([]*bigquery.QueryParameter, len(v))
 	for i, item := range v {

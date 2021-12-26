@@ -9,5 +9,4 @@ import (
 type Response struct {
 	bigquery.QueryResponse
 	session *internal.Session
-
 }

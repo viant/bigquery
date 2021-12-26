@@ -167,7 +167,3 @@ func asTimestamp(t string) time.Time {
 	ts, _ := time.ParseInLocation(time.RFC3339, t, time.UTC)
 	return ts
 }
-
-
-
-
