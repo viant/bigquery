@@ -42,11 +42,11 @@ you can pass your credentials via GOOGLE_APPLICATION_CREDENTIALS environment var
 package main
 
 import (
-	"database/sql"
-    "fmt"
-	"context"
-    "log"
-   _ "github.com/viant/bigquery"
+ "database/sql"
+ "fmt"
+ "context"
+ "log"
+_ "github.com/viant/bigquery"
 )
 
 
