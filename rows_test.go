@@ -115,12 +115,12 @@ func TestRows_Next(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		stmt, err := db.PrepareContext(context.TODO(), testCase.SQL)
+		stmt, err := db.PrepareContext(context.Background(), testCase.SQL)
 		if !assert.Nil(t, err, testCase.description) {
 			continue
 		}
 
-		rows, err := stmt.QueryContext(context.TODO(), testCase.params...)
+		rows, err := stmt.QueryContext(context.Background(), testCase.params...)
 		if !assert.Nil(t, err, testCase.description) {
 			continue
 		}

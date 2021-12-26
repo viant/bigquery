@@ -42,7 +42,7 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert args to query parameters: %w", err)
 	}
-	return s.exec(context.TODO(), params)
+	return s.exec(context.Background(), params)
 }
 
 //ExecContext executes statements
@@ -79,7 +79,7 @@ func (s *Statement) Query(args []driver.Value) (driver.Rows, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert args to query parameters: %w", err)
 	}
-	return s.query(context.TODO(), params)
+	return s.query(context.Background(), params)
 }
 
 //QueryContext runs query

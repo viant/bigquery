@@ -15,7 +15,7 @@ func testDatabaseSQLClientQuery(projectID, SQL string, repeat int, values []inte
 		return 0, err
 	}
 	defer db.Close()
-	stmt, err := db.PrepareContext(context.TODO(), SQL)
+	stmt, err := db.PrepareContext(context.Backround(), SQL)
 	if err != nil {
 		return 0, err
 	}

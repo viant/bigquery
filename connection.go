@@ -18,7 +18,7 @@ type connection struct {
 
 // Prepare returns a prepared statement, bound to this connection.
 func (c *connection) Prepare(query string) (driver.Stmt, error) {
-	return c.PrepareContext(context.TODO(), query)
+	return c.PrepareContext(context.Background(), query)
 }
 
 // PrepareContext returns a prepared statement, bound to this connection.
