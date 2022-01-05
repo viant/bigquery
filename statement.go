@@ -10,26 +10,24 @@ import (
 
 //Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
-	projectID   string
-	location    string
-	service     *bigquery.Service
-	configQuery *bigquery.JobConfigurationQuery
-	numInput    int
+	projectID string
+	location  string
+	service   *bigquery.Service
+	job       *bigquery.Job
+	numInput  int
 }
 
 func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
-	queryJob := bigquery.Job{Configuration: &bigquery.JobConfiguration{
-		Query: s.configQuery,
-	}}
-	queryJob.JobReference = &bigquery.JobReference{
-		ProjectId: s.projectID,
-		Location:  s.location,
+	queryJob := s.job
+	if queryJob.JobReference == nil {
+		queryJob.JobReference = &bigquery.JobReference{}
 	}
+	queryJob.JobReference.ProjectId = s.projectID
+	queryJob.JobReference.Location = s.location
 	var job *bigquery.Job
 	var err error
 	err = runWithRetries(func() error {
-
-		jobCall := s.service.Jobs.Insert(s.projectID, &queryJob)
+		jobCall := s.service.Jobs.Insert(s.projectID, queryJob)
 		job, err = jobCall.Context(ctx).Do()
 		return err
 	}, 3)
@@ -55,7 +53,7 @@ func (s *Statement) ExecContext(ctx context.Context, args []driver.NamedValue) (
 }
 
 func (s *Statement) exec(ctx context.Context, params []*bigquery.QueryParameter) (driver.Result, error) {
-	s.configQuery.QueryParameters = params
+	s.job.Configuration.Query.QueryParameters = params
 	job, err := s.submitJob(ctx)
 	if err != nil {
 		return nil, err
@@ -92,7 +90,7 @@ func (s *Statement) QueryContext(ctx context.Context, args []driver.NamedValue) 
 }
 
 func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter) (driver.Rows, error) {
-	s.configQuery.QueryParameters = params
+	s.job.Configuration.Query.QueryParameters = params
 	job, err := s.submitJob(ctx)
 	if err != nil {
 		return nil, err
@@ -123,7 +121,7 @@ func (s *Statement) CheckNamedValue(n *driver.NamedValue) error {
 
 func (s *Statement) checkQueryParameters() {
 	//this is very basic parameter detection, need to be improved
-	query := strings.ToLower(s.configQuery.Query)
+	query := strings.ToLower(s.job.Configuration.Query.Query)
 	count := 0
 	for _, c := range query {
 		switch c {

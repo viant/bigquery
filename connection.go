@@ -23,28 +23,50 @@ func (c *connection) Prepare(query string) (driver.Stmt, error) {
 
 // PrepareContext returns a prepared statement, bound to this connection.
 func (c *connection) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
-	configQuery, err := c.configureQuery(query)
+	jobConfiguration, err := c.jobConfiguration(query)
 	if err != nil {
 		return nil, err
 	}
-	stmt := &Statement{configQuery: configQuery, service: c.service, projectID: c.projectID, location: c.cfg.Location}
-
+	stmt := &Statement{job: jobConfiguration, service: c.service, projectID: c.projectID, location: c.cfg.Location}
 	stmt.checkQueryParameters()
 	return stmt, nil
 }
 
-func (c *connection) configureQuery(query string) (*bigquery.JobConfigurationQuery, error) {
+func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
+	job := &bigquery.Job{
+		Configuration: &bigquery.JobConfiguration{},
+	}
 	useLegacy := false
 	configQuery := &bigquery.JobConfigurationQuery{UseLegacySql: &useLegacy}
 
 	if index := strings.Index(query, "/*+"); index != -1 {
 		if end := strings.Index(query, "+*/"); end != -1 {
 			hint := strings.TrimSpace(query[index+3 : end])
-			if err := json.Unmarshal([]byte(hint), configQuery); err != nil {
-				return nil, fmt.Errorf("invalid hint %v, %w", hint, err)
+			if strings.HasPrefix(hint, "{") || strings.HasSuffix(hint, "}") {
+				userHint := &queryHint{
+					JobConfigurationQuery: bigquery.JobConfigurationQuery{
+						UseLegacySql: &useLegacy,
+					},
+				}
+				if err := json.Unmarshal([]byte(hint), &userHint); err != nil {
+					return nil, fmt.Errorf("invalid hint %v, %w", hint, err)
+				}
+				if userHint.ExpandDSN {
+					if count := strings.Count(query, dsnProjectID); count > 0 {
+						query = strings.Replace(query, dsnProjectID, c.cfg.ProjectID, count)
+					}
+					if count := strings.Count(query, dsnDatasetID); count > 0 {
+						query = strings.Replace(query, dsnDatasetID, c.cfg.DatasetID, count)
+					}
+					if count := strings.Count(query, dsnLocation); count > 0 {
+						query = strings.Replace(query, dsnLocation, c.cfg.Location, count)
+					}
+				}
+				configQuery = &userHint.JobConfigurationQuery
 			}
 		}
 	}
+
 	configQuery.Query = query
 	if c.cfg.DatasetID != "" {
 		configQuery.DefaultDataset = &bigquery.DatasetReference{
@@ -52,7 +74,8 @@ func (c *connection) configureQuery(query string) (*bigquery.JobConfigurationQue
 			DatasetId: c.cfg.DatasetID,
 		}
 	}
-	return configQuery, nil
+	job.Configuration.Query = configQuery
+	return job, nil
 }
 
 //Ping pings server

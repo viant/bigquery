@@ -13,6 +13,7 @@ import (
 )
 
 func TestRows_Next(t *testing.T) {
+
 	projectID := os.Getenv("GCP_PROJECT")
 	if projectID == "" {
 		t.Skip("set GCP_PROJECT and GOOGLE_APPLICATION_CREDENTIALS before running test")
@@ -109,6 +110,15 @@ func TestRows_Next(t *testing.T) {
 			expect: [][]interface{}{
 				{
 					-3369419977847865783,
+				},
+			},
+		},
+		{
+			description: "ExpandJobID hint ",
+			SQL:         "SELECT  /*+ {\"ExpandDSN\": true} +*/ '$ProjectID' AS PROJECT_ID",
+			expect: [][]interface{}{
+				{
+					os.Getenv("GCP_PROJECT"),
 				},
 			},
 		},

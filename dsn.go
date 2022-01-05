@@ -17,6 +17,8 @@ const (
 	apiKey          = "apiKey"
 	quotaProject    = "quotaProject"
 	scopes          = "scopes"
+	app             = "app"
+	defaultApp      = "go-sql-bq"
 )
 
 // Config is a configuration parsed from a DSN string.
@@ -33,6 +35,7 @@ type Config struct {
 	QuotaProject    string
 	Scopes          []string
 	Location        string
+	App             string
 	url.Values
 }
 
@@ -107,6 +110,9 @@ func ParseDSN(dsn string) (*Config, error) {
 		if cfg.Values.Has(apiKey) {
 			cfg.APIKey = cfg.Values.Get(apiKey)
 		}
+		if cfg.Values.Has(app) {
+			cfg.App = cfg.Values.Get(app)
+		}
 		if cfg.Values.Has(credentialJSON) {
 			cfg.CredentialJSON = cfg.Values.Get(credentialJSON)
 		}
@@ -116,7 +122,12 @@ func ParseDSN(dsn string) (*Config, error) {
 		if cfg.Values.Has(scopes) {
 			cfg.Scopes = cfg.Values[scopes]
 		}
-
+	}
+	if cfg.App == "" {
+		cfg.App = defaultApp
+	}
+	if cfg.Location == "" {
+		cfg.Location = "us"
 	}
 	return cfg, nil
 }
