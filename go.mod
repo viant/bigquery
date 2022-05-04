@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/francoispqt/gojay v1.2.13
 	github.com/stretchr/testify v1.7.0
-	github.com/viant/xunsafe v0.5.0
+	github.com/viant/xunsafe v0.8.0
 	google.golang.org/api v0.63.0
 )
 
