@@ -18,65 +18,69 @@ var (
 )
 var values = make([]func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error), 3*(valuesSpan+1))
 
+func unsafeAdd(structAddr unsafe.Pointer, offset uintptr) unsafe.Pointer {
+	return unsafe.Pointer(uintptr(structAddr) + offset)
+}
+
 func init() {
 
 	values[reflect.Bool] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*bool)(unsafe.Add(structAddr, field.Offset))
+		v := *(*bool)(unsafeAdd(structAddr, field.Offset))
 		return NewBoolQueryParameter(field.Name, v)
 	}
 	values[reflect.Int] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*int)(unsafe.Add(structAddr, field.Offset))
+		v := *(*int)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, v)
 	}
 	values[reflect.Int8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*int8)(unsafe.Add(structAddr, field.Offset))
+		v := *(*int8)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Int16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*int16)(unsafe.Add(structAddr, field.Offset))
+		v := *(*int16)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Int32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*int32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*int32)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Int64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*int64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*int64)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 
 	values[reflect.Uint] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*uint)(unsafe.Add(structAddr, field.Offset))
+		v := *(*uint)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Uint8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*uint8)(unsafe.Add(structAddr, field.Offset))
+		v := *(*uint8)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Uint16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*uint16)(unsafe.Add(structAddr, field.Offset))
+		v := *(*uint16)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Uint32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*uint32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*uint32)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 	values[reflect.Uint64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*uint64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*uint64)(unsafeAdd(structAddr, field.Offset))
 		return NewIntQueryParameter(field.Name, int(v))
 	}
 
 	values[reflect.Float32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*float32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*float32)(unsafeAdd(structAddr, field.Offset))
 		return NewFloatQueryParameter(field.Name, float64(v))
 	}
 	values[reflect.Float64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*float64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*float64)(unsafeAdd(structAddr, field.Offset))
 		return NewFloatQueryParameter(field.Name, v)
 	}
 
 	values[reflect.String] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*string)(unsafe.Add(structAddr, field.Offset))
+		v := *(*string)(unsafeAdd(structAddr, field.Offset))
 		return NewStringQueryParameter(field.Name, v)
 	}
 
@@ -91,7 +95,7 @@ func init() {
 	}
 
 	values[reflect.Struct] = func(owner reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		ptr := unsafe.Add(structAddr, owner.Offset)
+		ptr := unsafeAdd(structAddr, owner.Offset)
 		ownerType := owner.Type
 		switch ownerType {
 		case reflect.TypeOf(time.Time{}):
@@ -129,7 +133,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Struct] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		ptr := unsafe.Add(structAddr, field.Offset)
+		ptr := unsafeAdd(structAddr, field.Offset)
 		if ptr == nil {
 			return &bigquery.QueryParameter{
 				Name:           field.Name,
@@ -145,7 +149,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Bool] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]bool)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]bool)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.FormatBool(v[i])}
@@ -154,7 +158,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Int] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]int)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]int)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(v[i])}
@@ -163,7 +167,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Int8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]int8)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]int8)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -172,7 +176,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Int16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]int16)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]int16)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -181,7 +185,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Int32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]int32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]int32)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -190,7 +194,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Int64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]int64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]int64)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -199,7 +203,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Uint] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]uint)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]uint)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -208,12 +212,12 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Uint8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]uint8)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]uint8)(unsafeAdd(structAddr, field.Offset))
 		return NewBytesQueryParameter(field.Name, v)
 	}
 
 	values[sliceIndexBegin+reflect.Uint16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]uint16)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]uint16)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -222,7 +226,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Uint32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]uint32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]uint32)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -231,7 +235,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Uint64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]uint64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]uint64)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.Itoa(int(v[i]))}
@@ -240,7 +244,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Float32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]float32)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]float32)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.FormatFloat(float64(v[i]), 'f', -1, 64)}
@@ -249,7 +253,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.Float64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]float64)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]float64)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: strconv.FormatFloat(v[i], 'f', -1, 64)}
@@ -258,7 +262,7 @@ func init() {
 	}
 
 	values[sliceIndexBegin+reflect.String] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := *(*[]string)(unsafe.Add(structAddr, field.Offset))
+		v := *(*[]string)(unsafeAdd(structAddr, field.Offset))
 		var values = make([]*bigquery.QueryParameterValue, len(v))
 		for i := range v {
 			values[i] = &bigquery.QueryParameterValue{Value: v[i]}
@@ -267,17 +271,17 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Bool] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*bool)(unsafe.Add(structAddr, field.Offset))
+		v := (*bool)(unsafeAdd(structAddr, field.Offset))
 		return NewBoolPtrQueryParameter(field.Name, v)
 	}
 
 	values[ptrIndexBegin+reflect.Int] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*int)(unsafe.Add(structAddr, field.Offset))
+		v := (*int)(unsafeAdd(structAddr, field.Offset))
 		return NewIntPtrQueryParameter(field.Name, v)
 	}
 
 	values[ptrIndexBegin+reflect.Int8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*int8)(unsafe.Add(structAddr, field.Offset))
+		v := (*int8)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -286,7 +290,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Int16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*int16)(unsafe.Add(structAddr, field.Offset))
+		v := (*int16)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -295,7 +299,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Int32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*int32)(unsafe.Add(structAddr, field.Offset))
+		v := (*int32)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -304,7 +308,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Int64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*int64)(unsafe.Add(structAddr, field.Offset))
+		v := (*int64)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -313,7 +317,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Uint] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*uint)(unsafe.Add(structAddr, field.Offset))
+		v := (*uint)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -322,7 +326,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Uint8] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*uint8)(unsafe.Add(structAddr, field.Offset))
+		v := (*uint8)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -331,7 +335,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Uint16] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*uint16)(unsafe.Add(structAddr, field.Offset))
+		v := (*uint16)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -339,7 +343,7 @@ func init() {
 		return NewIntPtrQueryParameter(field.Name, i)
 	}
 	values[ptrIndexBegin+reflect.Uint32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*uint32)(unsafe.Add(structAddr, field.Offset))
+		v := (*uint32)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -348,7 +352,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Uint64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*uint64)(unsafe.Add(structAddr, field.Offset))
+		v := (*uint64)(unsafeAdd(structAddr, field.Offset))
 		var i *int
 		if v != nil {
 			i = intPtr(int(*v))
@@ -357,7 +361,7 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Float32] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*float32)(unsafe.Add(structAddr, field.Offset))
+		v := (*float32)(unsafeAdd(structAddr, field.Offset))
 		var f64 *float64
 		if v != nil {
 			f := float64(*v)
@@ -367,12 +371,12 @@ func init() {
 	}
 
 	values[ptrIndexBegin+reflect.Float64] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*float64)(unsafe.Add(structAddr, field.Offset))
+		v := (*float64)(unsafeAdd(structAddr, field.Offset))
 		return NewFloatPtrQueryParameter(field.Name, v)
 	}
 
 	values[ptrIndexBegin+reflect.String] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		v := (*string)(unsafe.Add(structAddr, field.Offset))
+		v := (*string)(unsafeAdd(structAddr, field.Offset))
 		return NewStringPtrQueryParameter(field.Name, v)
 	}
 

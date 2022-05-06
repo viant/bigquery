@@ -395,5 +395,5 @@ func init() {
 }
 
 func cursor(dec *gojay.Decoder) int {
-	return *(*int)(unsafe.Add(unsafe.Pointer(dec), curOffset))
+	return *(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(dec)) + curOffset))
 }
