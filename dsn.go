@@ -98,28 +98,28 @@ func ParseDSN(dsn string) (*Config, error) {
 		Values:    URL.Query(),
 	}
 	if len(cfg.Values) > 0 {
-		if cfg.Values.Has(credentialsFile) {
+		if _, ok := cfg.Values[credentialsFile]; ok {
 			cfg.CredentialsFile = cfg.Values.Get(credentialsFile)
 		}
-		if cfg.Values.Has(endpoint) {
+		if _, ok := cfg.Values[endpoint]; ok {
 			cfg.Endpoint = cfg.Values.Get(endpoint)
 		}
-		if cfg.Values.Has(userAgent) {
+		if _, ok := cfg.Values[userAgent]; ok {
 			cfg.UserAgent = cfg.Values.Get(userAgent)
 		}
-		if cfg.Values.Has(apiKey) {
+		if _, ok := cfg.Values[apiKey]; ok {
 			cfg.APIKey = cfg.Values.Get(apiKey)
 		}
-		if cfg.Values.Has(app) {
+		if _, ok := cfg.Values[app]; ok {
 			cfg.App = cfg.Values.Get(app)
 		}
-		if cfg.Values.Has(credentialJSON) {
+		if _, ok := cfg.Values[credentialJSON]; ok {
 			cfg.CredentialJSON = cfg.Values.Get(credentialJSON)
 		}
-		if cfg.Values.Has(quotaProject) {
+		if _, ok := cfg.Values[quotaProject]; ok {
 			cfg.QuotaProject = cfg.Values.Get(quotaProject)
 		}
-		if cfg.Values.Has(scopes) {
+		if _, ok := cfg.Values[scopes]; ok {
 			cfg.Scopes = cfg.Values[scopes]
 		}
 	}
