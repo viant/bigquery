@@ -42,12 +42,13 @@ var (
 	float64Type = reflect.TypeOf(float64(0))
 	bytesType   = reflect.TypeOf([]byte{})
 	stringType  = reflect.TypeOf("")
+	timeType    = reflect.TypeOf(time.Time{})
 	timeTypePtr = reflect.TypeOf(&time.Time{})
 	boolType    = reflect.TypeOf(false)
 	ratType     = reflect.TypeOf(big.Rat{})
 )
 
-func mapBasicType(dataType string) (reflect.Type, error) {
+func mapBasicType(dataType string, nullable bool) (reflect.Type, error) {
 	switch FieldType(dataType) {
 	case FieldTypeInteger:
 		return intType, nil
@@ -58,7 +59,10 @@ func mapBasicType(dataType string) (reflect.Type, error) {
 	case FieldTypeNumeric, FieldTypeFloat:
 		return float64Type, nil
 	case FieldTypeTime, FieldTypeTimestamp, FieldTypeDate, FieldTypeDateTime:
-		return timeTypePtr, nil
+		if nullable {
+			return timeTypePtr, nil
+		}
+		return timeType, nil
 	case FieldTypeBoolean:
 		return boolType, nil
 	case FieldTypeBigNumeric:

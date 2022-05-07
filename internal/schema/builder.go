@@ -28,7 +28,7 @@ func BuildFieldType(field *bigquery.TableFieldSchema) (reflect.Type, error) {
 	var dataType reflect.Type
 	var err error
 	if len(field.Fields) == 0 {
-		if dataType, err = mapBasicType(field.Type); err != nil {
+		if dataType, err = mapBasicType(field.Type, field.Mode == "NULLABLE"); err != nil {
 			return nil, fmt.Errorf("failed to build field: %v, %w", field.Name, err)
 		}
 	} else {

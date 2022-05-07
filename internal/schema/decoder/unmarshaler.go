@@ -10,7 +10,6 @@ import (
 	"unsafe"
 )
 
-
 //Unmarshaler represnets unmarshaler
 type Unmarshaler interface {
 	gojay.UnmarshalerJSONObject
@@ -19,8 +18,6 @@ type Unmarshaler interface {
 
 //newUnmarshaler represents a marshaler constructor
 type newUnmarshaler func(ptr interface{}) Unmarshaler
-
-
 
 var timeType = reflect.TypeOf(time.Time{})
 var timePtrType = reflect.TypeOf(&time.Time{})
@@ -190,7 +187,54 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		default:
 			return nil, fmt.Errorf("unsupported binding type %v to %s", sourceType, targetType.String())
 		}
-	case "TIME", "TIMESTAMP", "DATE", "DATETIME":
+	case "DATE":
+		switch targetType.Kind() {
+		case reflect.String:
+			return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
+				val := ""
+				dec.String(&val)
+				*(*string)(dest) = val
+				return nil
+			}, nil
+		case reflect.Interface:
+			return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
+				ts, ok, err := decodeDate(dec)
+				if err != nil || !ok {
+					return err
+				}
+				*(*interface{})(dest) = ts
+				return nil
+			}, nil
+		case reflect.Struct:
+			if targetType.ConvertibleTo(timeType) {
+				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
+					ts, ok, err := decodeDate(dec)
+					if err != nil || !ok {
+						return err
+					}
+					if err != nil || !ok {
+						return err
+					}
+					*(*time.Time)(dest) = ts
+					return nil
+				}, nil
+			}
+		case reflect.Ptr:
+			if targetType.ConvertibleTo(timePtrType) {
+				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
+					ts, ok, err := decodeDate(dec)
+					if err != nil || !ok {
+						return err
+					}
+					*(**time.Time)(dest) = &ts
+					return nil
+				}, nil
+			}
+		default:
+			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
+		}
+
+	case "TIME", "TIMESTAMP", "DATETIME":
 		switch targetType.Kind() {
 		case reflect.Uint, reflect.Int, reflect.Int64, reflect.Uint64:
 			return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
@@ -314,6 +358,18 @@ func decodeTime(dec *gojay.Decoder) (time.Time, bool, error) {
 	timestamp := int64(f*1000000) * int64(time.Microsecond)
 	ts := time.Unix(0, timestamp)
 	return ts, true, nil
+}
+
+func decodeDate(dec *gojay.Decoder) (time.Time, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return time.Time{}, false, err
+	}
+	if v == "" {
+		return time.Time{}, true, nil
+	}
+	t, err := time.Parse("2006-01-02", v)
+	return t, true, err
 }
 
 func decodeInt(dec *gojay.Decoder) (int, bool, error) {
