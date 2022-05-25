@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"google.golang.org/api/option"
 )
 
 // Driver is exported to make the driver directly accessible.
@@ -22,6 +23,11 @@ func (d Driver) Open(dsn string) (driver.Conn, error) {
 		cfg: cfg,
 	}
 	return c.Connect(context.Background())
+}
+
+//SetGCPClientOptions sets global gcp options
+func (d Driver) SetGCPClientOptions(options ...option.ClientOption) {
+	SetOptions(options...)
 }
 
 func init() {
