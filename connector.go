@@ -8,7 +8,8 @@ import (
 )
 
 type connector struct {
-	cfg *Config
+	cfg     *Config
+	options []option.ClientOption
 }
 
 var globalOptions []option.ClientOption
@@ -21,7 +22,9 @@ func SetOptions(opts ...option.ClientOption) {
 //Connect connects to database
 func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	options := c.cfg.options()
-	if len(globalOptions) > 0 {
+	if len(c.options) > 0 {
+		options = append(options, c.options...)
+	} else if len(globalOptions) > 0 {
 		options = append(options, globalOptions...)
 	}
 	service, err := bigquery.NewService(ctx, options...)

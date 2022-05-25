@@ -46,6 +46,7 @@ func (d Driver) OpenConnector(dsn string) (driver.Connector, error) {
 		return nil, err
 	}
 	return &connector{
-		cfg: cfg,
+		cfg:     cfg,
+		options: globalOptions,
 	}, nil
 }
