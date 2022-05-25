@@ -26,7 +26,7 @@ func (d Driver) Open(dsn string) (driver.Conn, error) {
 }
 
 //SetGCPClientOptions sets global gcp options
-func (d Driver) SetGCPClientOptions(options ...option.ClientOption) {
+func (d *Driver) SetGCPClientOptions(options ...option.ClientOption) {
 	SetOptions(options...)
 }
 
