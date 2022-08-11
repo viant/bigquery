@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/francoispqt/gojay"
 	"github.com/viant/bigquery/internal"
 	"google.golang.org/api/bigquery/v2"
@@ -13,13 +14,13 @@ import (
 	"unsafe"
 )
 
-//ResultsCall represents query results call
+// ResultsCall represents query results call
 type ResultsCall struct {
 	session *internal.Session
 	*nativeCall
 }
 
-//nativeCall represents original *bigquery.JobsGetQueryResultsCall (fields order and data type has to match)
+// nativeCall represents original *bigquery.JobsGetQueryResultsCall (fields order and data type has to match)
 type nativeCall struct {
 	s            *bigquery.Service
 	ProjectId    string
@@ -30,12 +31,12 @@ type nativeCall struct {
 	header_      http.Header
 }
 
-//Context sets a context
+// Context sets a context
 func (c *ResultsCall) Context(ctx context.Context) {
 	c.ctx_ = ctx
 }
 
-//Do runs a call
+// Do runs a call
 func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 	SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
@@ -47,6 +48,7 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 		c.session.Data = data
 		res.Body = io.NopCloser(bytes.NewReader(data))
 	}
+
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
 			res.Body.Close()
@@ -74,9 +76,10 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 		},
 	}
 
+	c.session.Rows = []internal.Region{}
 	err = gojay.UnmarshalJSONObject(c.session.Data, ret)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parseJSON: %w, %s", err, c.session.Data)
 	}
 
 	//for i, reg := range c.session.Rows {
@@ -150,7 +153,7 @@ func send(ctx context.Context, client *http.Client, req *http.Request) (*http.Re
 	return resp, err
 }
 
-//NewResultsCall creates a new query result call
+// NewResultsCall creates a new query result call
 func NewResultsCall(call *bigquery.JobsGetQueryResultsCall, session *internal.Session) *ResultsCall {
 	res := (*nativeCall)(unsafe.Pointer(call))
 	return &ResultsCall{nativeCall: res, session: session}

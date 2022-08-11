@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-//Rows abstraction implements database/sql driver.Rows interface
+// Rows abstraction implements database/sql driver.Rows interface
 type Rows struct {
 	session       internal.Session
 	projectID     string
@@ -23,18 +23,18 @@ type Rows struct {
 	pageIndex     int
 }
 
-//Columns returns query columns
+// Columns returns query columns
 func (r *Rows) Columns() []string {
 	return r.session.Columns
 }
 
-//Close closes rows
+// Close closes rows
 func (r *Rows) Close() error {
 	r.service = nil
 	return nil
 }
 
-//Next moves to next row
+// Next moves to next row
 func (r *Rows) Next(dest []driver.Value) error {
 	if !r.hasNext() {
 		return io.EOF
@@ -50,7 +50,7 @@ func (r *Rows) Next(dest []driver.Value) error {
 	data := r.session.Data[region.Begin:region.End]
 	err := gojay.UnmarshalJSONArray(data, r.session.Decoder)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal Array: %w, %s", err, data)
 	}
 	for i := range r.session.Pointers {
 		dest[i] = r.session.XTypes[i].Deref(r.session.Pointers[i])
@@ -60,7 +60,7 @@ func (r *Rows) Next(dest []driver.Value) error {
 	return nil
 }
 
-//hasNext returns true if there is next row to fetch.
+// hasNext returns true if there is next row to fetch.
 func (r *Rows) hasNext() bool {
 	return r.processedRows < r.session.TotalRows
 }
@@ -93,17 +93,17 @@ func (r *Rows) queryResult() (*query.Response, error) {
 	return response, err
 }
 
-//ColumnTypeScanType returns column scan type
+// ColumnTypeScanType returns column scan type
 func (r *Rows) ColumnTypeScanType(index int) reflect.Type {
 	return r.session.DestTypes[index]
 }
 
-//ColumnTypeDatabaseTypeName returns column database type name
+// ColumnTypeDatabaseTypeName returns column database type name
 func (r *Rows) ColumnTypeDatabaseTypeName(index int) string {
 	return r.session.Schema.Fields[index].Type
 }
 
-//ColumnTypeNullable returns if column is nullable
+// ColumnTypeNullable returns if column is nullable
 func (r *Rows) ColumnTypeNullable(index int) (nullable, ok bool) {
 	isNullable := r.session.Schema.Fields[index].Mode == "NULLABLE"
 	return isNullable, true
