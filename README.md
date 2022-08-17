@@ -22,8 +22,10 @@ The BigQuery driver accepts the following DSN
  * 'bigquery://projectID/[location/]datasetID?queryString'
  
     Where queryString can optionally configure the following option:
-      - credentialsFile
-      - credentialJSON (with url-base64 encoded json)
+      - credURL (url encoded) local location or  [Scy](https://github.com/viant/scy) secret manager URL
+      - credKey (url encoded)  SCY secret manager key
+      - credID [Scy](https://github.com/viant/scy) resource secret ID
+      - credJSON rawURL base64 encoded cred JSON (not recommended)
       - endpoint
       - userAgent
       - apiKey

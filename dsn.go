@@ -1,8 +1,10 @@
 package bigquery
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/viant/scy"
 	"google.golang.org/api/option"
 	"net/url"
 	"strings"
@@ -10,8 +12,10 @@ import (
 
 const (
 	bigqueryScheme  = "bigquery"
-	credentialsFile = "credentialsFile"
-	credentialJSON  = "credentialJSON"
+	credentialsJSON = "credJSON"
+	credentialsURL  = "credURL"
+	credentialsKey  = "credKey"
+	credID          = "credID"
 	endpoint        = "endpoint"
 	userAgent       = "ua"
 	apiKey          = "apiKey"
@@ -28,7 +32,10 @@ type Config struct {
 	CredentialsFile string // Username
 	Endpoint        string
 	APIKey          string
-	CredentialJSON  string
+	CredentialJSON  []byte
+	CredentialsURL  string
+	CredID          string //scy secret resource ID
+	CredentialsKey  string
 	UserAgent       string
 	ProjectID       string // project ID
 	DatasetID       string
@@ -56,12 +63,8 @@ func (c *Config) options() []option.ClientOption {
 	if c.QuotaProject != "" {
 		result = append(result, option.WithQuotaProject(c.QuotaProject))
 	}
-	if c.CredentialJSON != "" {
-		JSON := []byte(c.CredentialJSON)
-		if raw, err := base64.RawURLEncoding.DecodeString(c.CredentialJSON); err == nil {
-			JSON = raw
-		}
-		result = append(result, option.WithCredentialsJSON(JSON))
+	if len(c.CredentialJSON) > 0 {
+		result = append(result, option.WithCredentialsJSON(c.CredentialJSON))
 	}
 
 	if len(c.Scopes) > 0 {
@@ -98,9 +101,6 @@ func ParseDSN(dsn string) (*Config, error) {
 		Values:    URL.Query(),
 	}
 	if len(cfg.Values) > 0 {
-		if _, ok := cfg.Values[credentialsFile]; ok {
-			cfg.CredentialsFile = cfg.Values.Get(credentialsFile)
-		}
 		if _, ok := cfg.Values[endpoint]; ok {
 			cfg.Endpoint = cfg.Values.Get(endpoint)
 		}
@@ -113,8 +113,17 @@ func ParseDSN(dsn string) (*Config, error) {
 		if _, ok := cfg.Values[app]; ok {
 			cfg.App = cfg.Values.Get(app)
 		}
-		if _, ok := cfg.Values[credentialJSON]; ok {
-			cfg.CredentialJSON = cfg.Values.Get(credentialJSON)
+		if _, ok := cfg.Values[credID]; ok {
+			cfg.CredID = cfg.Values.Get(credID)
+		}
+		if _, ok := cfg.Values[credentialsJSON]; ok {
+			cfg.CredentialJSON = []byte(cfg.Values.Get(credentialsJSON))
+		}
+		if _, ok := cfg.Values[credentialsKey]; ok {
+			cfg.CredentialsKey = cfg.Values.Get(credentialsKey)
+		}
+		if _, ok := cfg.Values[credentialsURL]; ok {
+			cfg.CredentialsURL = cfg.Values.Get(credentialsURL)
 		}
 		if _, ok := cfg.Values[quotaProject]; ok {
 			cfg.QuotaProject = cfg.Values.Get(quotaProject)
@@ -123,6 +132,17 @@ func ParseDSN(dsn string) (*Config, error) {
 			cfg.Scopes = cfg.Values[scopes]
 		}
 	}
+
+	if cfg.CredentialsKey != "" {
+		if URL, err := base64.RawURLEncoding.DecodeString(cfg.CredentialsKey); err == nil {
+			cfg.CredentialsKey = string(URL)
+		}
+	}
+
+	if err = cfg.initialiseSecrets(); err != nil {
+		return nil, err
+	}
+
 	if cfg.App == "" {
 		cfg.App = defaultApp
 	}
@@ -130,4 +150,51 @@ func ParseDSN(dsn string) (*Config, error) {
 		cfg.Location = "us"
 	}
 	return cfg, nil
+}
+
+func (c *Config) initialiseSecrets() error {
+	if c.CredentialsURL != "" {
+		if URL, err := base64.RawURLEncoding.DecodeString(c.CredentialsURL); err == nil {
+			c.CredentialsURL = string(URL)
+		}
+	}
+	if c.CredentialsKey != "" {
+		if URL, err := base64.RawURLEncoding.DecodeString(c.CredentialsKey); err == nil {
+			c.CredentialsKey = string(URL)
+		}
+	}
+	if len(c.CredentialJSON) > 0 {
+		if raw, err := base64.RawURLEncoding.DecodeString(string(c.CredentialJSON)); err == nil {
+			c.CredentialJSON = raw
+		}
+	}
+	if c.CredID != "" {
+		resource := scy.Resources().Lookup(c.CredID)
+		if resource == nil {
+			return fmt.Errorf("failed to lookup secretID: %v", c.CredID)
+		}
+		secrets, err := c.loadSecret(resource)
+		if err != nil {
+			return err
+		}
+		c.CredentialJSON = []byte(secrets.String())
+	}
+
+	if c.CredentialsURL != "" {
+		secrets, err := c.loadSecret(&scy.Resource{URL: c.CredentialsURL, Key: c.CredentialsKey})
+		if err != nil {
+			return err
+		}
+		c.CredentialJSON = []byte(secrets.String())
+	}
+	return nil
+}
+
+func (c *Config) loadSecret(resource *scy.Resource) (*scy.Secret, error) {
+	secretsMgr := scy.New()
+	secrets, err := secretsMgr.Load(context.Background(), resource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load secret from :%v, %w", resource.URL, err)
+	}
+	return secrets, nil
 }

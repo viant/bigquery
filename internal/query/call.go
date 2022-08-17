@@ -38,7 +38,9 @@ func (c *ResultsCall) Context(ctx context.Context) {
 
 // Do runs a call
 func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
+
 	SetOptions(c.urlParams_, opts...)
+
 	res, err := c.doRequest("json")
 	if res.Body != nil {
 		data, err := io.ReadAll(res.Body)
@@ -65,9 +67,9 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
+
 	ret := &Response{
 		session: c.session,
-
 		QueryResponse: bigquery.QueryResponse{
 			ServerResponse: googleapi.ServerResponse{
 				Header:         res.Header,
@@ -81,12 +83,6 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parseJSON: %w, %s", err, c.session.Data)
 	}
-
-	//for i, reg := range c.session.Rows {
-	//	rr := c.session.Data[reg.Begin:reg.End]
-	//	fmt.Printf("%v %s\n", i , rr)
-	//}
-
 	return ret, nil
 }
 
