@@ -8,6 +8,7 @@ import (
 	"google.golang.org/api/option"
 	"net/url"
 	"strings"
+	"sync"
 )
 
 const (
@@ -173,28 +174,46 @@ func (c *Config) initialiseSecrets() error {
 		if resource == nil {
 			return fmt.Errorf("failed to lookup secretID: %v", c.CredID)
 		}
-		secrets, err := c.loadSecret(resource)
+		credentialJSON, err := credentials.lookup(resource)
 		if err != nil {
 			return err
 		}
-		c.CredentialJSON = []byte(secrets.String())
+		c.CredentialJSON = []byte(credentialJSON)
 	}
 
 	if c.CredentialsURL != "" {
-		secrets, err := c.loadSecret(&scy.Resource{URL: c.CredentialsURL, Key: c.CredentialsKey})
+		credentialJSON, err := credentials.lookup(&scy.Resource{URL: c.CredentialsURL, Key: c.CredentialsKey})
 		if err != nil {
 			return err
 		}
-		c.CredentialJSON = []byte(secrets.String())
+		c.CredentialJSON = []byte(credentialJSON)
+
 	}
 	return nil
 }
 
-func (c *Config) loadSecret(resource *scy.Resource) (*scy.Secret, error) {
-	secretsMgr := scy.New()
-	secrets, err := secretsMgr.Load(context.Background(), resource)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load secret from :%v, %w", resource.URL, err)
-	}
-	return secrets, nil
+type credentialsRegistry struct {
+	registry map[string]string
+	sync.RWMutex
+	service *scy.Service
 }
+
+func (r *credentialsRegistry) lookup(resource *scy.Resource) (string, error) {
+	r.RWMutex.RLock()
+	result, ok := r.registry[resource.URL]
+	r.RWMutex.RUnlock()
+	if ok {
+		return result, nil
+	}
+
+	secrets, err := r.service.Load(context.Background(), resource)
+	if err != nil {
+		return "", fmt.Errorf("failed to load secret from :%v, %w", resource.URL, err)
+	}
+	r.RWMutex.Lock()
+	r.registry[resource.URL] = secrets.String()
+	r.RWMutex.Unlock()
+	return secrets.String(), nil
+}
+
+var credentials = credentialsRegistry{registry: map[string]string{}, service: scy.New()}
