@@ -19,6 +19,16 @@ func TestParse(t *testing.T) {
 		{
 			description: "CSV load with absolute destination",
 			SQL:         "LOAD 'Reader:csv:<uid>' DATA INTO TABLE project.set.table",
+			expect: &Ingestion{
+				Destination: &Destination{
+					ProjectID: "project",
+					DatasetID: "set",
+					TableID:   "table",
+				},
+				Kind:     "LOAD",
+				Format:   "CSV",
+				ReaderID: "<uid>",
+			},
 		},
 	}
 
