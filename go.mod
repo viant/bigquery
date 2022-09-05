@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/francoispqt/gojay v1.2.13
 	github.com/stretchr/testify v1.8.0
+	github.com/viant/assertly v0.9.0
 	github.com/viant/scy v0.3.0
 	github.com/viant/xunsafe v0.8.0
 	google.golang.org/api v0.74.0
@@ -20,7 +21,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/viant/afs v1.16.1-0.20220601210902-dc23d64dda15 // indirect
-	github.com/viant/assertly v0.9.0 // indirect
+	github.com/viant/parsly v0.0.0-20220824212058-ab859cc3d9d6 // indirect
 	github.com/viant/toolbox v0.34.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
