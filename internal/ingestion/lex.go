@@ -11,12 +11,19 @@ const (
 	whitespace = iota
 	loadKeyword
 	readerOptions
+	readerKeyword
 	dataIntoSequence
-	selector
+	destination
+	dataFormat
 )
 
 var whitespaceMatcher = parsly.NewToken(whitespace, "WHITESPACE", matcher.NewWhiteSpace())
 var loadKeywordMatcher = parsly.NewToken(loadKeyword, "LOAD", matcher.NewFragment("LOAD", &option.Case{Sensitive: false}))
-var readOptionsMatcher = parsly.NewToken(readerOptions, "READER OPTIONS", matcher.NewByteQuote('\'', '\\'))
-var dataIntoSequenceMatcher = parsly.NewToken(loadKeyword, "DATA INTO TABLE", matcher.NewSpacedFragment("DATA INTO TABLE", &option.Case{Sensitive: false}))
-var selectorMatcher = parsly.NewToken(selector, "DESTINATION", smatcher.NewSelector())
+
+var readOptionsMatcher = parsly.NewToken(readerOptions, "'Reader:<Format>:<ReaderID>'", matcher.NewByteQuote('\'', '\\'))
+var readerKeywordMatcher = parsly.NewToken(readerKeyword, "Reader", matcher.NewFragment("READER", &option.Case{Sensitive: false}))
+
+var dataFormatMatcher = parsly.NewToken(dataFormat, "<CSV|JSON>", matcher.NewSet([]string{"CSV", "JSON"}, &option.Case{Sensitive: false}))
+
+var dataIntoSequenceMatcher = parsly.NewToken(dataIntoSequence, "DATA INTO TABLE", matcher.NewSpacedFragment("DATA INTO TABLE", &option.Case{Sensitive: false}))
+var destinationMatcher = parsly.NewToken(destination, "project.set.table", smatcher.NewSelector())
