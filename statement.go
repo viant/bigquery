@@ -59,7 +59,7 @@ func (s *Statement) exec(ctx context.Context, params []*bigquery.QueryParameter)
 	if err != nil {
 		return nil, err
 	}
-	completed, err := waitForJobCompletion(ctx, s.service, s.projectID, s.location, job.JobReference.JobId)
+	completed, err := exec.WaitForJobCompletion(ctx, s.service, s.projectID, s.location, job.JobReference.JobId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run job: %v.%v, %w", job.JobReference.ProjectId, job.JobReference.JobId, err)
 	}
@@ -96,8 +96,8 @@ func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter
 	if err != nil {
 		return nil, err
 	}
-	if job.Status.State != statusDone {
-		if _, err = waitForJobCompletion(ctx, s.service, s.projectID, s.location, job.JobReference.JobId); err != nil {
+	if job.Status.State != exec.StatusDone {
+		if _, err = exec.WaitForJobCompletion(ctx, s.service, s.projectID, s.location, job.JobReference.JobId); err != nil {
 			return nil, err
 		}
 	}
