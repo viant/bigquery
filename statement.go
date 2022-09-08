@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"github.com/viant/bigquery/internal/exec"
 	"google.golang.org/api/bigquery/v2"
 	"strings"
 )
@@ -26,7 +27,7 @@ func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
 	queryJob.JobReference.Location = s.location
 	var job *bigquery.Job
 	var err error
-	err = runWithRetries(func() error {
+	err = exec.RunWithRetries(func() error {
 		jobCall := s.service.Jobs.Insert(s.projectID, queryJob)
 		job, err = jobCall.Context(ctx).Do()
 		return err

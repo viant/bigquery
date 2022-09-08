@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/viant/bigquery/internal/exec"
 	"google.golang.org/api/bigquery/v2"
 	"time"
 )
@@ -17,7 +18,7 @@ func waitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 	var err error
 	waitTime := 30 * time.Millisecond
 	for {
-		err = runWithRetries(func() error {
+		err = exec.RunWithRetries(func() error {
 			statusCall := service.Jobs.Get(projectID, jobReferenceID)
 			statusCall.Location(location)
 			job, err = statusCall.Context(ctx).Do()
