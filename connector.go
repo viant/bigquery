@@ -35,7 +35,7 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	}
 	isAuth := isAuth(options)
 
-	if !c.cfg.HasCred() && !isAuth {
+	if !c.cfg.hasCred() && !isAuth {
 		gcpService := gcp.New(client.NewGCloud())
 		httpClient, err := gcpService.AuthClient(context.Background(), append(gcp.Scopes, "https://www.googleapis.com/auth/bigquery")...)
 		if err == nil && httpClient != nil {

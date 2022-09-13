@@ -23,23 +23,23 @@ type ResultsCall struct {
 // nativeCall represents original *bigquery.JobsGetQueryResultsCall (fields order and data type has to match)
 type nativeCall struct {
 	s            *bigquery.Service
-	ProjectId    string
-	JobId        string
-	urlParams_   URLParams
-	ifNoneMatch_ string
-	ctx_         context.Context
-	header_      http.Header
+	ProjectID    string
+	JobID        string
+	urlParamsX   URLParams
+	ifNoneMatchX string
+	ctxX         context.Context
+	headerX      http.Header
 }
 
 // Context sets a context
 func (c *ResultsCall) Context(ctx context.Context) {
-	c.ctx_ = ctx
+	c.ctxX = ctx
 }
 
 // Do runs a call
 func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 
-	SetOptions(c.urlParams_, opts...)
+	SetOptions(c.urlParamsX, opts...)
 
 	res, err := c.doRequest("json")
 	if res.Body != nil {
@@ -94,28 +94,28 @@ func (c *nativeCall) httpClient() *http.Client {
 func (c *nativeCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
 	reqHeaders.Set("x-goog-api-client", "viant/bigquery")
-	for k, v := range c.header_ {
+	for k, v := range c.headerX {
 		reqHeaders[k] = v
 	}
 	reqHeaders.Set("User-Agent", "GoLang")
-	if c.ifNoneMatch_ != "" {
-		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	if c.ifNoneMatchX != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatchX)
 	}
 	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
+	c.urlParamsX.Set("alt", alt)
+	c.urlParamsX.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "projects/{projectId}/queries/{jobId}")
-	urls += "?" + c.urlParams_.Encode()
+	urls += "?" + c.urlParamsX.Encode()
 	req, err := http.NewRequest("GET", urls, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
-		"projectId": c.ProjectId,
-		"jobId":     c.JobId,
+		"projectId": c.ProjectID,
+		"jobId":     c.JobID,
 	})
-	return sendRequest(c.ctx_, c.httpClient(), req)
+	return sendRequest(c.ctxX, c.httpClient(), req)
 }
 
 func sendRequest(ctx context.Context, client *http.Client, req *http.Request) (*http.Response, error) {

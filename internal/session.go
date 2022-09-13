@@ -21,6 +21,7 @@ type Session struct {
 	TotalRows uint64
 }
 
+//Init initialises session
 func (s *Session) Init(tableSchema *bigquery.TableSchema) error {
 	var err error
 	if s.DestTypes, err = schema.BuildSchemaTypes(tableSchema); err != nil {
@@ -42,6 +43,7 @@ func (s *Session) Init(tableSchema *bigquery.TableSchema) error {
 	return nil
 }
 
+//Region represents a data region
 type Region struct {
 	Begin int
 	End   int

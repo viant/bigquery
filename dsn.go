@@ -47,7 +47,8 @@ type Config struct {
 	url.Values
 }
 
-func (c *Config) HasCred() bool {
+//hasCred returns ture if config has credential configured
+func (c *Config) hasCred() bool {
 	return c.CredID != "" || len(c.CredentialJSON) > 0 || c.CredentialsURL != "" || c.CredentialsFile != ""
 }
 
