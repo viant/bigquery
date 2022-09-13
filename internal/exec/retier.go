@@ -1,4 +1,4 @@
-package bigquery
+package exec
 
 import (
 	"google.golang.org/api/googleapi"
@@ -55,8 +55,8 @@ func newRetries() *retrier {
 	return &retrier{}
 }
 
-//runWithRetries run with retries
-func runWithRetries(f func() error, maxRetries int) (err error) {
+//RunWithRetries run with exp backoff retries on http.StatusInternalServerError, http.StatusServiceUnavailable, http.StatusBadGateway
+func RunWithRetries(f func() error, maxRetries int) (err error) {
 	aRetrier := newRetries()
 	for i := 0; i < maxRetries; i++ {
 		err = f()
