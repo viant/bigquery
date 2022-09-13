@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/viant/bigquery/internal/hint"
+	"github.com/viant/bigquery/internal/ingestion"
 	"google.golang.org/api/bigquery/v2"
 	"strings"
 )
@@ -21,12 +23,27 @@ func (c *connection) Prepare(query string) (driver.Stmt, error) {
 	return c.PrepareContext(context.Background(), query)
 }
 
+func (c *connection) isIngestion(SQL string) bool {
+	normalizedSQL := strings.ToUpper(strings.TrimSpace(SQL))
+	return strings.HasPrefix(normalizedSQL, string(ingestion.KindLoad)) || strings.HasPrefix(normalizedSQL, string(ingestion.KindStream))
+}
+
 // PrepareContext returns a prepared statement, bound to this connection.
-func (c *connection) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
-	jobConfiguration, err := c.jobConfiguration(query)
+func (c *connection) PrepareContext(ctx context.Context, SQL string) (driver.Stmt, error) {
+
+	if c.isIngestion(SQL) {
+		return &ingestionStatement{
+			service: ingestion.NewService(c.service, c.projectID, c.cfg.DatasetID, c.cfg.Location),
+			ctx:     ctx,
+			SQL:     SQL,
+		}, nil
+	}
+
+	jobConfiguration, err := c.jobConfiguration(SQL)
 	if err != nil {
 		return nil, err
 	}
+
 	stmt := &Statement{job: jobConfiguration, service: c.service, projectID: c.projectID, location: c.cfg.Location}
 	stmt.checkQueryParameters()
 	return stmt, nil
@@ -39,32 +56,27 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 	useLegacy := false
 	configQuery := &bigquery.JobConfigurationQuery{UseLegacySql: &useLegacy}
 
-	if index := strings.Index(query, "/*+"); index != -1 {
-		if end := strings.Index(query, "+*/"); end != -1 {
-			hint := strings.TrimSpace(query[index+3 : end])
-			if strings.HasPrefix(hint, "{") || strings.HasSuffix(hint, "}") {
-				userHint := &queryHint{
-					JobConfigurationQuery: bigquery.JobConfigurationQuery{
-						UseLegacySql: &useLegacy,
-					},
-				}
-				if err := json.Unmarshal([]byte(hint), &userHint); err != nil {
-					return nil, fmt.Errorf("invalid hint %v, %w", hint, err)
-				}
-				if userHint.ExpandDSN {
-					if count := strings.Count(query, dsnProjectID); count > 0 {
-						query = strings.Replace(query, dsnProjectID, c.cfg.ProjectID, count)
-					}
-					if count := strings.Count(query, dsnDatasetID); count > 0 {
-						query = strings.Replace(query, dsnDatasetID, c.cfg.DatasetID, count)
-					}
-					if count := strings.Count(query, dsnLocation); count > 0 {
-						query = strings.Replace(query, dsnLocation, c.cfg.Location, count)
-					}
-				}
-				configQuery = &userHint.JobConfigurationQuery
+	if aHint := hint.Extract(query); aHint != "" {
+		userHint := &queryHint{
+			JobConfigurationQuery: bigquery.JobConfigurationQuery{
+				UseLegacySql: &useLegacy,
+			},
+		}
+		if err := json.Unmarshal([]byte(aHint), &userHint); err != nil {
+			return nil, fmt.Errorf("invalid aHint %v, %w", aHint, err)
+		}
+		if userHint.ExpandDSN {
+			if count := strings.Count(query, dsnProjectID); count > 0 {
+				query = strings.Replace(query, dsnProjectID, c.cfg.ProjectID, count)
+			}
+			if count := strings.Count(query, dsnDatasetID); count > 0 {
+				query = strings.Replace(query, dsnDatasetID, c.cfg.DatasetID, count)
+			}
+			if count := strings.Count(query, dsnLocation); count > 0 {
+				query = strings.Replace(query, dsnLocation, c.cfg.Location, count)
 			}
 		}
+		configQuery = &userHint.JobConfigurationQuery
 	}
 
 	configQuery.Query = query

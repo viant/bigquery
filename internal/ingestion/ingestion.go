@@ -1,23 +1,36 @@
 package ingestion
 
-type Kind string
+type kind string
 
 const (
-	KindLoad   = Kind("LOAD")
-	KindStream = Kind("STREAM")
+	//KindLoad means supported load data ability
+	KindLoad = kind("LOAD")
+
+	// KindStream means supported stream data ability
+	KindStream = kind("STREAM")
 )
 
 type (
-	Destination struct {
+	destination struct {
 		ProjectID string
 		DatasetID string
 		TableID   string
 	}
 
-	Ingestion struct {
-		Destination *Destination
-		Kind        Kind
+	ingestion struct {
+		Destination *destination
+		Kind        kind
 		Format      string
 		ReaderID    string
+		Hint        string
 	}
 )
+
+func (d *destination) init(projectID string, datasetID string) {
+	if d.ProjectID == "" {
+		d.ProjectID = projectID
+	}
+	if d.DatasetID == "" {
+		d.DatasetID = datasetID
+	}
+}
