@@ -8,10 +8,21 @@ import (
 
 var readers = newRegistry()
 
+// Register registers reader
 func Register(ID string, aReader io.Reader) error {
 	return readers.add(ID, aReader)
 }
 
+// Get returns registered reader by ID
+func Get(ID string) (io.Reader, error) {
+	result := readers.get(ID)
+	if result == nil {
+		return nil, fmt.Errorf("unknown reader: %s", ID)
+	}
+	return result, nil
+}
+
+// Unregister unregisters reader
 func Unregister(ID string) {
 	readers.remove(ID)
 }
@@ -22,7 +33,7 @@ type reader struct {
 }
 
 func (r *reader) Read(b []byte) (int, error) {
-	n, err := r.Read(b)
+	n, err := r.Reader.Read(b)
 	if err == io.EOF {
 		r.unregister()
 	}
@@ -57,4 +68,13 @@ func (r *registry) remove(ID string) {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 	delete(r.readers, ID)
+}
+
+func (r *registry) get(ID string) io.Reader {
+	r.mux.Lock()
+	defer r.mux.Unlock()
+	if aReader, ok := r.readers[ID]; ok {
+		return aReader
+	}
+	return nil
 }

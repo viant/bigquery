@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-// Parse creates Ingestion from parsed SQL
-func Parse(SQL string) (*Ingestion, error) {
-	result := &Ingestion{}
+// parse creates ingestion from parsed SQL
+func parse(SQL string) (*ingestion, error) {
+	result := &ingestion{}
 	cursor := parsly.NewCursor("", []byte(SQL), 0)
 
 	match := cursor.MatchOne(loadKeywordMatcher)
 	if match.Code != loadKeyword {
 		return nil, fmt.Errorf("%w, current token:%s", cursor.NewError(loadKeywordMatcher), SQL)
 	}
-	result.Kind = Kind(match.Text(cursor))
+	result.Kind = kind(match.Text(cursor))
 
 	match = cursor.MatchOne(whitespaceMatcher)
 	if match.Code != whitespace {
@@ -51,7 +51,7 @@ func Parse(SQL string) (*Ingestion, error) {
 	}
 
 	match = cursor.MatchAfterOptional(whitespaceMatcher, destinationMatcher)
-	if match.Code != destination {
+	if match.Code != aDestination {
 		return nil, fmt.Errorf("%w, current token:%s", cursor.NewError(destinationMatcher), SQL)
 	}
 
@@ -75,8 +75,8 @@ func Parse(SQL string) (*Ingestion, error) {
 	return result, nil
 }
 
-// decodeReaderOptions updates Ingestion with decoded reader options
-func decodeReaderOptions(text string, ingestion *Ingestion) error {
+// decodeReaderOptions updates ingestion with decoded reader options
+func decodeReaderOptions(text string, ingestion *ingestion) error {
 
 	opts := strings.SplitN(text, ":", 3)
 	if len(opts) != 3 {
@@ -95,21 +95,16 @@ func decodeReaderOptions(text string, ingestion *Ingestion) error {
 		return fmt.Errorf("%w, current token:%s", cursor.NewError(dataFormatMatcher), opts[1])
 	}
 	ingestion.Format = opts[1]
-
-	//_, err := uuid.Parse(opts[2])
-	//if err != nil {
-	//	return fmt.Errorf("invalid UUID %s, %w", opts[2], err)
-	//}
 	ingestion.ReaderID = opts[2]
 
 	return nil
 }
 
-// decodeDestination updates Ingestion with decoded destination values
-func decodeDestination(text string, ingestion *Ingestion) error {
+// decodeDestination updates ingestion with decoded destination values
+func decodeDestination(text string, ingestion *ingestion) error {
 
 	opts := strings.SplitN(text, ".", 3)
-	ingestion.Destination = &Destination{}
+	ingestion.Destination = &destination{}
 
 	switch len(opts) {
 	case 3:
@@ -147,5 +142,5 @@ func decodeDestination(text string, ingestion *Ingestion) error {
 func isValidSelector(id string) bool {
 	cursor := parsly.NewCursor("", []byte(id), 0)
 	match := cursor.MatchOne(destinationMatcher)
-	return match.Code == destination
+	return match.Code == aDestination
 }

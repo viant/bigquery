@@ -12,8 +12,9 @@ const (
 	loadKeyword
 	readerOptions
 	readerKeyword
+	//	hintOptions
 	dataIntoSequence
-	destination
+	aDestination
 	dataFormat
 )
 
@@ -23,7 +24,10 @@ var loadKeywordMatcher = parsly.NewToken(loadKeyword, "LOAD", matcher.NewFragmen
 var readOptionsMatcher = parsly.NewToken(readerOptions, "'Reader:<Format>:<ReaderID>'", matcher.NewByteQuote('\'', '\\'))
 var readerKeywordMatcher = parsly.NewToken(readerKeyword, "Reader", matcher.NewFragment("READER", &option.Case{Sensitive: false}))
 
-var dataFormatMatcher = parsly.NewToken(dataFormat, "<CSV|JSON>", matcher.NewSet([]string{"CSV", "JSON"}, &option.Case{Sensitive: false}))
+var dataFormatMatcher = parsly.NewToken(dataFormat, "<CSV|JSON|PARQUET>", matcher.NewSet([]string{"CSV", "JSON", "PARQUET"}, &option.Case{Sensitive: false}))
+
+// TODO problem with parsing quota mark inside block e.g.: /*"*/
+//var hintMatcher = parsly.NewToken(hintOptions, "/*+ HINT +*/", matcher.NewSeqBlock("/*+", "+*/"))
 
 var dataIntoSequenceMatcher = parsly.NewToken(dataIntoSequence, "DATA INTO TABLE", matcher.NewSpacedFragment("DATA INTO TABLE", &option.Case{Sensitive: false}))
-var destinationMatcher = parsly.NewToken(destination, "project.set.table", smatcher.NewSelector())
+var destinationMatcher = parsly.NewToken(aDestination, "project.set.table", smatcher.NewSelector())

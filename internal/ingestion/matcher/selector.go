@@ -4,10 +4,11 @@ import (
 	"github.com/viant/parsly"
 )
 
-type selector struct{}
+// Selector represent a Selector matcher
+type Selector struct{}
 
-//Match matches a string
-func (n *selector) Match(cursor *parsly.Cursor) (matched int) {
+// Match matches a string
+func (n *Selector) Match(cursor *parsly.Cursor) (matched int) {
 	input := cursor.Input
 	pos := cursor.Pos
 	size := len(input)
@@ -41,7 +42,7 @@ func (n *selector) Match(cursor *parsly.Cursor) (matched int) {
 
 	for i := pos; i < size; i++ {
 		switch input[i] {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '.', ':':
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '.', ':', '-':
 			matched++
 			continue
 		default:
@@ -56,11 +57,12 @@ func (n *selector) Match(cursor *parsly.Cursor) (matched int) {
 	return matched
 }
 
-//NewSelector creates a selector matcher
-func NewSelector() *selector {
-	return &selector{}
+// NewSelector creates a Selector matcher
+func NewSelector() *Selector {
+	return &Selector{}
 }
 
+// IsLetter checks if passed byte means a letter
 func IsLetter(b byte) bool {
 	if (b < 'a' || b > 'z') && (b < 'A' || b > 'Z') {
 		return false
