@@ -21,6 +21,9 @@ const (
 	FieldTypeFloat FieldType = "FLOAT"
 	// FieldTypeBoolean is a boolean field type.
 	FieldTypeBoolean FieldType = "BOOLEAN"
+	// FieldTypeBool is a bool field type.
+	FieldTypeBool FieldType = "BOOL"
+
 	// FieldTypeTimestamp is a timestamp field type.
 	FieldTypeTimestamp FieldType = "TIMESTAMP"
 	// FieldTypeRecord is a record field type.
@@ -63,7 +66,7 @@ func mapBasicType(dataType string, nullable bool) (reflect.Type, error) {
 			return timeTypePtr, nil
 		}
 		return timeType, nil
-	case FieldTypeBoolean:
+	case FieldTypeBoolean, FieldTypeBool:
 		return boolType, nil
 	case FieldTypeBigNumeric:
 		return ratType, nil
