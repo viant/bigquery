@@ -47,6 +47,10 @@ type Config struct {
 	url.Values
 }
 
+func (c *Config) HasCred() bool {
+	return c.CredID != "" || len(c.CredentialJSON) > 0 || c.CredentialsURL != "" || c.CredentialsFile != ""
+}
+
 func (c *Config) options() []option.ClientOption {
 	var result = make([]option.ClientOption, 0)
 	if c.CredentialsFile != "" {
