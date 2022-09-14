@@ -101,7 +101,7 @@ func main() {
 
 This driver implements LOAD/STREAM operation with the following SQL:
 ```sql
-LOAD 'Reader:<SOURCE_FORMAT>:<READER_ID>' DATA INTO TABLE mytable"
+LOAD 'Reader:<SOURCE_FORMAT>:<READER_ID>' DATA INTO TABLE myproject.mydataset.mytable
 ```
 
 The following snippet register READER_ID
@@ -145,6 +145,21 @@ func ExampleNewService() {
    affected, _ := result.RowsAffected()
    fmt.Printf("loaded: %v rows", affected)
 }
+```
+
+## Load option control 
+
+To customize Load you can inline 
+[JobConfigurationLoad](https://github.com/googleapis/google-api-go-client/blob/main/bigquery/v2/bigquery-gen.go#L4297) you can 
+as JSON as a hint 
+``` LOAD 'Reader:<SOURCE_FORMAT>:<READER_ID>' /*+ <HINT> +*/  DATA INTO TABLE mytable```
+for example:
+
+```sql
+LOAD 'Reader:CSV:201F973D-9BAB-4E0A-880F-7830B876F210' /*+ {
+    "AllowJaggedRows": true,
+    "AllowQuotedNewlines":true
+  } +*/  DATA INTO TABLE mytable
 ```
 
 
