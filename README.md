@@ -97,6 +97,57 @@ func main() {
 }
 ```
 
+## Data Ingestion (Load/Stream)
+
+This driver implements LOAD/STREAM operation with the following SQL:
+```sql
+LOAD 'Reader:<SOURCE_FORMAT>:<READER_ID>' DATA INTO TABLE mytable"
+```
+
+The following snippet register READER_ID
+
+```go
+ err := reader.Register(readerID, myReader)
+```
+
+
+The following code loads CSV data
+```go
+package mypkg
+
+import (
+   "context"
+   "database/sql"
+   "fmt"
+   "github.com/viant/bigquery/reader"
+   "log"
+   "strings"
+)
+
+func ExampleNewService() {
+   projectID := "my-gcp-project"
+   db, err := sql.Open("bigquery", fmt.Sprintf("bigquery://%v/test", projectID))
+   if err != nil {
+    log.Fatal(err)
+   }
+   readerID := "123456"
+   csvReader := strings.NewReader("ID,Name,Desc\n1,Name 1,Test\n2,Name 2,Test 2")
+   err = reader.Register(readerID, csvReader)
+   if err != nil {
+     log.Fatal(err)
+   }
+   defer reader.Unregister(readerID)
+   SQL := fmt.Sprintf(`LOAD 'Reader:csv:%v' DATA INTO TABLE mytable`, readerID)
+   result, err := db.ExecContext(context.TODO(), SQL)
+   if err != nil {
+     log.Fatal(err)
+   }
+   affected, _ := result.RowsAffected()
+   fmt.Printf("loaded: %v rows", affected)
+}
+```
+
+
 ## Benchmark
 
 Benchmark runs 3 times the following queries:
