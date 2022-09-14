@@ -99,11 +99,10 @@ This driver implements LOAD/STREAM operation with the following SQL:
 
 ### Loading data
 
-To load data register a reader for supported source format first followed by LOAD SQL.
+To load data register a reader for supported source format, followed by LOAD SQL.
 
 ```sql
-LOAD
-'Reader:<SOURCE_FORMAT>:<READER_ID>' DATA INTO TABLE myproject.mydataset.mytable
+LOAD 'Reader:<SOURCE_FORMAT>:<READER_ID>' DATA INTO TABLE myproject.mydataset.mytable
 ```
 
 The following snippet register READER_ID
@@ -223,12 +222,12 @@ as JSON as a hint
 for example:
 
 ```sql
-LOAD
-'Reader:CSV:201F973D-9BAB-4E0A-880F-7830B876F210' /*+ {
+LOAD 'Reader:CSV:201F973D-9BAB-4E0A-880F-7830B876F210' /*+ {
     "AllowJaggedRows": true,
     "AllowQuotedNewlines":true
   } +*/  DATA INTO TABLE mytable
 ```
+
 
 ## Benchmark
 
