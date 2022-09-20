@@ -11,9 +11,9 @@ func parse(SQL string) (*ingestion, error) {
 	result := &ingestion{}
 	cursor := parsly.NewCursor("", []byte(SQL), 0)
 
-	match := cursor.MatchOne(loadKeywordMatcher)
-	if match.Code != loadKeyword {
-		return nil, fmt.Errorf("%w, current token:%s", cursor.NewError(loadKeywordMatcher), SQL)
+	match := cursor.MatchOne(ingestionKindMatcher)
+	if match.Code != ingestionKindKeyword {
+		return nil, fmt.Errorf("%w, current token:%s", cursor.NewError(ingestionKindMatcher), SQL)
 	}
 	result.Kind = kind(match.Text(cursor))
 
@@ -30,7 +30,14 @@ func parse(SQL string) (*ingestion, error) {
 	encodedReaderOption := match.Text(cursor)
 	encodedReaderOption = encodedReaderOption[1 : len(encodedReaderOption)-1]
 
-	err := decodeReaderOptions(encodedReaderOption, result)
+	var err error
+	switch result.Kind {
+	case KindStream:
+		err = decodeReaderOptionsForStream(encodedReaderOption, result)
+	default:
+		err = decodeReaderOptionsForLoad(encodedReaderOption, result)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +82,7 @@ func parse(SQL string) (*ingestion, error) {
 	return result, nil
 }
 
-// decodeReaderOptions updates ingestion with decoded reader options
-func decodeReaderOptions(text string, ingestion *ingestion) error {
+func decodeReaderOptionsForLoad(text string, ingestion *ingestion) error {
 
 	opts := strings.SplitN(text, ":", 3)
 	if len(opts) != 3 {
@@ -96,6 +102,32 @@ func decodeReaderOptions(text string, ingestion *ingestion) error {
 	}
 	ingestion.Format = opts[1]
 	ingestion.ReaderID = opts[2]
+
+	return nil
+}
+
+func decodeReaderOptionsForStream(text string, ingestion *ingestion) error {
+
+	opts := strings.SplitN(text, ":", 4)
+	if len(opts) != 4 {
+		return fmt.Errorf("failed to split reader options:%s, supported:[%s]", text, readOptionsMatcher.Name)
+	}
+
+	cursor := parsly.NewCursor("", []byte(opts[0]), 0)
+	match := cursor.MatchOne(readerKeywordMatcher)
+	if match.Code != readerKeyword || cursor.HasMore() {
+		return fmt.Errorf("%w, current token:%s", cursor.NewError(readerKeywordMatcher), opts[0])
+	}
+
+	ingestion.InsertIDField = opts[1]
+
+	cursor = parsly.NewCursor("", []byte(opts[2]), 0)
+	match = cursor.MatchOne(dataFormatMatcher)
+	if match.Code != dataFormat || cursor.HasMore() {
+		return fmt.Errorf("%w, current token:%s", cursor.NewError(dataFormatMatcher), opts[1])
+	}
+	ingestion.Format = opts[2]
+	ingestion.ReaderID = opts[3]
 
 	return nil
 }

@@ -18,11 +18,12 @@ type (
 	}
 
 	ingestion struct {
-		Destination *destination
-		Kind        kind
-		Format      string
-		ReaderID    string
-		Hint        string
+		Destination   *destination
+		Kind          kind
+		Format        string
+		InsertIDField string
+		ReaderID      string
+		Hint          string
 	}
 )
 
