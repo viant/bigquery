@@ -17,6 +17,68 @@ func TestParse(t *testing.T) {
 		expect      *ingestion
 	}{
 		{
+			description: "JSON stream with absolute destination and wrong first keyword",
+			SQL:         "INSERT 'Reader::json:123e4567-e89b-12d3-a456-426614174012' DATA INTO TABLE project.set.table",
+			hasError:    true,
+			expect: &ingestion{
+				Destination: &destination{
+					ProjectID: "project",
+					DatasetID: "set",
+					TableID:   "table",
+				},
+				Kind:     "STREAM",
+				Format:   "json",
+				ReaderID: "123e4567-e89b-12d3-a456-426614174012",
+			},
+		},
+		{
+			description: "JSON stream with absolute destination and wrong format for Reader",
+			SQL:         "STREAM 'Reader:json:123e4567-e89b-12d3-a456-426614174012' DATA INTO TABLE project.set.table",
+			hasError:    true,
+			expect: &ingestion{
+				Destination: &destination{
+					ProjectID: "project",
+					DatasetID: "set",
+					TableID:   "table",
+				},
+				Kind:     "STREAM",
+				Format:   "json",
+				ReaderID: "123e4567-e89b-12d3-a456-426614174012",
+			},
+		},
+		{
+			description: "JSON stream with absolute destination",
+			SQL:         "STREAM 'Reader::json:123e4567-e89b-12d3-a456-426614174012' DATA INTO TABLE project.set.table",
+			hasError:    false,
+			expect: &ingestion{
+				Destination: &destination{
+					ProjectID: "project",
+					DatasetID: "set",
+					TableID:   "table",
+				},
+				Kind:     "STREAM",
+				Format:   "json",
+				ReaderID: "123e4567-e89b-12d3-a456-426614174012",
+			},
+		},
+		{
+			description: "JSON stream with InsertIdField and absolute destination",
+			SQL:         "STREAM 'Reader:ID:json:123e4567-e89b-12d3-a456-426614174012' DATA INTO TABLE project.set.table",
+			hasError:    false,
+			expect: &ingestion{
+				Destination: &destination{
+					ProjectID: "project",
+					DatasetID: "set",
+					TableID:   "table",
+				},
+				Kind:          "STREAM",
+				Format:        "json",
+				InsertIDField: "ID",
+				ReaderID:      "123e4567-e89b-12d3-a456-426614174012",
+				Hint:          "",
+			},
+		},
+		{
 			description: "CSV load with absolute destination - real example",
 			SQL:         "LOAD 'Reader:csv:123e4567-e89b-12d3-a456-426614174012' DATA INTO TABLE snappy-analog-357718.DB_02_US.test_table",
 			hasError:    false,

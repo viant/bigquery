@@ -9,7 +9,7 @@ import (
 
 const (
 	whitespace = iota
-	loadKeyword
+	ingestionKindKeyword
 	readerOptions
 	readerKeyword
 	//	hintOptions
@@ -19,7 +19,8 @@ const (
 )
 
 var whitespaceMatcher = parsly.NewToken(whitespace, "WHITESPACE", matcher.NewWhiteSpace())
-var loadKeywordMatcher = parsly.NewToken(loadKeyword, "LOAD", matcher.NewFragment("LOAD", &option.Case{Sensitive: false}))
+
+var ingestionKindMatcher = parsly.NewToken(ingestionKindKeyword, "<LOAD|STREAM>", matcher.NewSet([]string{"LOAD", "STREAM"}, &option.Case{Sensitive: false}))
 
 var readOptionsMatcher = parsly.NewToken(readerOptions, "'Reader:<Format>:<ReaderID>'", matcher.NewByteQuote('\'', '\\'))
 var readerKeywordMatcher = parsly.NewToken(readerKeyword, "Reader", matcher.NewFragment("READER", &option.Case{Sensitive: false}))
