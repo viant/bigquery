@@ -16,6 +16,11 @@ import (
 )
 
 const (
+	// Maximum rows per request allowed are:
+	// 10000 (at 2020 year)
+	// 50000 (at 2022 year)
+	// but a maximum of 500 rows per request is recommended (at 2020 and 2022 year)
+	//https://cloud.google.com/bigquery/quotas#streaming_inserts
 	maxStreamBatchCount = int64(9999)
 	attempts            = 3
 )
