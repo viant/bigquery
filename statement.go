@@ -94,11 +94,11 @@ func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter
 	s.job.Configuration.Query.QueryParameters = params
 	job, err := s.submitJob(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, SQL: %v", err, s.job.Configuration.Query.Query)
 	}
 	if job.Status.State != exec.StatusDone {
 		if _, err = exec.WaitForJobCompletion(ctx, s.service, s.projectID, s.location, job.JobReference.JobId); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w, SQL: %v", err, s.job.Configuration.Query.Query)
 		}
 	}
 	return newRows(s.service, s.projectID, s.location, job)
