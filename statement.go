@@ -123,12 +123,25 @@ func (s *Statement) CheckNamedValue(n *driver.NamedValue) error {
 func (s *Statement) checkQueryParameters() {
 	//this is very basic parameter detection, need to be improved
 	query := strings.ToLower(s.job.Configuration.Query.Query)
+	count := checkQueryParameters(query)
+	s.numInput = count
+}
+
+func checkQueryParameters(query string) int {
 	count := 0
-	for _, c := range query {
+	inQuote := false
+	for i, c := range query {
 		switch c {
+		case '\'':
+			if i > 1 && inQuote && query[i-1] == '\\' {
+				continue
+			}
+			inQuote = !inQuote
 		case '?', '@':
-			count++
+			if !inQuote {
+				count++
+			}
 		}
 	}
-	s.numInput = count
+	return count
 }

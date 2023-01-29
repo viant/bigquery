@@ -8,7 +8,7 @@ require (
 	github.com/viant/assertly v0.9.0
 	github.com/viant/parsly v0.0.0-20220907184615-a27c125714a1
 	github.com/viant/scy v0.3.2-0.20220825213848-acc5c59cde78
-	github.com/viant/xunsafe v0.8.0
+	github.com/viant/xunsafe v0.8.2
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	google.golang.org/api v0.74.0
 )

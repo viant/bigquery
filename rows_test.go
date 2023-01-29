@@ -48,7 +48,7 @@ func TestRows_Next(t *testing.T) {
 			description: "nested/repeated",
 			SQL: `WITH races AS (
 		  SELECT "800M" AS race,
-		    [STRUCT("Ben" as name, [23.4, 26.3] as splits), 
+		    [STRUCT("Ben" as name, [23.6, 26.3] as splits), 
 		 	 STRUCT("Frank" as name, [23.4, 26.3] as splits)
 			]
 		       AS participants)
@@ -59,7 +59,7 @@ func TestRows_Next(t *testing.T) {
 		CROSS JOIN UNNEST(r.participants) as participant`,
 			expect: [][]interface{}{
 				{
-					"800M", []byte(`{"name":"Ben","splits":[23.4,26.3]}`),
+					"800M", []byte(`{"name":"Ben","splits":[23.6,26.3]}`),
 				},
 				{
 					"800M", []byte(`{"name":"Frank","splits":[23.4,26.3]}`),
