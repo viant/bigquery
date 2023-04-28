@@ -91,6 +91,11 @@ func init() {
 
 	values[reflect.Ptr] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
 		item := field.Type.Elem()
+		if field.Offset == 0 && item.Kind() == reflect.Ptr {
+			structAddr = *(*unsafe.Pointer)(structAddr)
+			item = item.Elem()
+			field.Type = item
+		}
 		return values[ptrIndexBegin+item.Kind()](field, structAddr)
 	}
 
@@ -99,10 +104,10 @@ func init() {
 		ownerType := owner.Type
 		switch ownerType {
 		case reflect.TypeOf(time.Time{}):
-			v := *(*time.Time)(ptr)
+			v := (*time.Time)(ptr)
 			return NewTimeQueryParameter(owner.Name, v)
 		case reflect.TypeOf(big.Rat{}):
-			v := *(*big.Rat)(ptr)
+			v := (*big.Rat)(ptr)
 			return NewBigNumericQueryParameter(owner.Name, v)
 		}
 
@@ -134,6 +139,23 @@ func init() {
 
 	values[ptrIndexBegin+reflect.Struct] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
 		ptr := unsafeAdd(structAddr, field.Offset)
+
+		ownerType := field.Type
+		switch ownerType {
+		case reflect.TypeOf(time.Time{}):
+			v := (*time.Time)(ptr)
+			if v == nil {
+				return NewTimeQueryParameter(field.Name, nil)
+			}
+			return NewTimeQueryParameter(field.Name, v)
+		case reflect.TypeOf(big.Rat{}):
+			v := (*big.Rat)(ptr)
+			if v == nil {
+				return NewBigNumericQueryParameter(field.Name, nil)
+			}
+			return NewBigNumericQueryParameter(field.Name, v)
+		}
+
 		if ptr == nil {
 			return &bigquery.QueryParameter{
 				Name:           field.Name,
@@ -432,31 +454,38 @@ func NewStringQueryParameter(name string, v string) (*bigquery.QueryParameter, e
 		Name:          name,
 		ParameterType: paramTypeString,
 		ParameterValue: &bigquery.QueryParameterValue{
-			Value: v,
+			Value:           v,
+			ForceSendFields: []string{"Value"},
 		},
 	}, nil
 }
 
 //NewTimeQueryParameter returns a time query parameter
-func NewTimeQueryParameter(name string, t time.Time) (*bigquery.QueryParameter, error) {
-	return &bigquery.QueryParameter{
-		Name:          name,
-		ParameterType: paramTypeTimestamp,
-		ParameterValue: &bigquery.QueryParameterValue{
-			Value: t.Format(time.RFC3339Nano),
-		},
-	}, nil
+func NewTimeQueryParameter(name string, t *time.Time) (*bigquery.QueryParameter, error) {
+	result := &bigquery.QueryParameter{
+		Name:           name,
+		ParameterType:  paramTypeTimestamp,
+		ParameterValue: &bigquery.QueryParameterValue{},
+	}
+
+	if t != nil {
+		result.ParameterValue.Value = t.Format(time.RFC3339Nano)
+	}
+
+	return result, nil
 }
 
 //NewBigNumericQueryParameter returns a big numeric query parameter
-func NewBigNumericQueryParameter(name string, t big.Rat) (*bigquery.QueryParameter, error) {
-	return &bigquery.QueryParameter{
-		Name:          name,
-		ParameterType: paramTypeBigNumeric,
-		ParameterValue: &bigquery.QueryParameterValue{
-			Value: t.String(),
-		},
-	}, nil
+func NewBigNumericQueryParameter(name string, t *big.Rat) (*bigquery.QueryParameter, error) {
+	result := &bigquery.QueryParameter{
+		Name:           name,
+		ParameterType:  paramTypeBigNumeric,
+		ParameterValue: &bigquery.QueryParameterValue{},
+	}
+	if t != nil {
+		result.ParameterValue.Value = t.String()
+	}
+	return result, nil
 }
 
 //NewBoolPtrQueryParameter returns an bool query parameter
@@ -510,13 +539,17 @@ func NewStringPtrQueryParameter(name string, v *string) (*bigquery.QueryParamete
 	if v != nil {
 		value = *v
 	}
-	return &bigquery.QueryParameter{
+	result := &bigquery.QueryParameter{
 		Name:          name,
 		ParameterType: paramTypeString,
 		ParameterValue: &bigquery.QueryParameterValue{
 			Value: value,
 		},
-	}, nil
+	}
+	if value == "" {
+		result.ParameterValue.ForceSendFields = []string{"Value"}
+	}
+	return result, nil
 }
 
 //NewBytesQueryParameter  returns bytes query parameter
