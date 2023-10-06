@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-//BuildSchemaTypes build type matching table schema
+// BuildSchemaTypes build type matching table schema
 func BuildSchemaTypes(table *bigquery.TableSchema) ([]reflect.Type, error) {
 	var result = make([]reflect.Type, len(table.Fields))
 	var err error
@@ -23,7 +23,7 @@ type loc struct{}
 
 var location = reflect.TypeOf(&loc{}).PkgPath()
 
-//BuildFieldType build a field type from big query schema
+// BuildFieldType build a field type from big query schema
 func BuildFieldType(field *bigquery.TableFieldSchema) (reflect.Type, error) {
 	var dataType reflect.Type
 	var err error

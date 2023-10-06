@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-//Statement abstraction implements database/sql driver.Statement interface
+// Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
 	projectID string
 	location  string
@@ -35,7 +35,7 @@ func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
 	return job, err
 }
 
-//Exec executes statements
+// Exec executes statements
 func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 	params, err := Values(args).QueryParameter()
 	if err != nil {
@@ -44,7 +44,7 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 	return s.exec(context.Background(), params)
 }
 
-//ExecContext executes statements
+// ExecContext executes statements
 func (s *Statement) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
 	params, err := NamedValues(args).QueryParameter()
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *Statement) exec(ctx context.Context, params []*bigquery.QueryParameter)
 	return &res, nil
 }
 
-//Query runs query
+// Query runs query
 func (s *Statement) Query(args []driver.Value) (driver.Rows, error) {
 	params, err := Values(args).QueryParameter()
 	if err != nil {
@@ -81,7 +81,7 @@ func (s *Statement) Query(args []driver.Value) (driver.Rows, error) {
 	return s.query(context.Background(), params)
 }
 
-//QueryContext runs query
+// QueryContext runs query
 func (s *Statement) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	params, err := NamedValues(args).QueryParameter()
 	if err != nil {
@@ -104,18 +104,18 @@ func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter
 	return newRows(s.service, s.projectID, s.location, job)
 }
 
-//Close closes statement
+// Close closes statement
 func (s *Statement) Close() error {
 	s.service = nil
 	return nil
 }
 
-//NumInput returns numinput
+// NumInput returns numinput
 func (s *Statement) NumInput() int {
 	return s.numInput
 }
 
-//CheckNamedValue checks name values
+// CheckNamedValue checks name values
 func (s *Statement) CheckNamedValue(n *driver.NamedValue) error {
 	return nil
 }

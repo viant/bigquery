@@ -52,6 +52,17 @@ var (
 )
 
 func mapBasicType(dataType string, nullable bool) (reflect.Type, error) {
+	rType, err := mapBasicRawType(dataType)
+	if err != nil {
+		return nil, err
+	}
+	if nullable {
+		rType = reflect.PtrTo(rType)
+	}
+	return rType, nil
+}
+
+func mapBasicRawType(dataType string) (reflect.Type, error) {
 	switch FieldType(dataType) {
 	case FieldTypeInteger:
 		return intType, nil
@@ -62,9 +73,6 @@ func mapBasicType(dataType string, nullable bool) (reflect.Type, error) {
 	case FieldTypeNumeric, FieldTypeFloat:
 		return float64Type, nil
 	case FieldTypeTime, FieldTypeTimestamp, FieldTypeDate, FieldTypeDateTime:
-		if nullable {
-			return timeTypePtr, nil
-		}
 		return timeType, nil
 	case FieldTypeBoolean, FieldTypeBool:
 		return boolType, nil
