@@ -62,6 +62,10 @@ func (r *Rows) Next(dest []driver.Value) error {
 				if v, _ := value.(*int); v != nil {
 					value = *v
 				}
+			case reflect.Int64:
+				if v, _ := value.(*int64); v != nil {
+					value = *v
+				}
 			case reflect.String:
 				if v, _ := value.(*string); v != nil {
 					value = *v
