@@ -61,32 +61,39 @@ func (r *Rows) Next(dest []driver.Value) error {
 			case reflect.Int:
 				if v, _ := value.(*int); v != nil {
 					value = *v
-				}
-			case reflect.Int64:
-				if v, _ := value.(*int64); v != nil {
-					value = *v
+				} else {
+					value = nil
 				}
 			case reflect.String:
 				if v, _ := value.(*string); v != nil {
 					value = *v
+				} else {
+					value = nil
 				}
-
 			case reflect.Float64:
 				if v, _ := value.(*float64); v != nil {
 					value = *v
+				} else {
+					value = nil
 				}
 			case reflect.Float32:
 				if v, _ := value.(*float32); v != nil {
 					value = *v
+				} else {
+					value = nil
 				}
 			case reflect.Bool:
 				if v, _ := value.(*bool); v != nil {
 					value = *v
+				} else {
+					value = nil
 				}
 			}
 			if aType == timePtrType {
 				if v, _ := value.(*time.Time); v != nil {
 					value = *v
+				} else {
+					value = nil
 				}
 			}
 		}
