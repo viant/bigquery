@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/bigquery/v2"
 	"io"
 	"reflect"
+	"time"
 )
 
 // Rows abstraction implements database/sql driver.Rows interface
@@ -53,12 +54,46 @@ func (r *Rows) Next(dest []driver.Value) error {
 		return fmt.Errorf("failed to unmarshal Array: %w, %s", err, data)
 	}
 	for i := range r.session.Pointers {
-		dest[i] = r.session.XTypes[i].Deref(r.session.Pointers[i])
+		aType := r.session.XTypes[i].Type()
+		value := r.session.XTypes[i].Deref(r.session.Pointers[i])
+		if aType.Kind() == reflect.Ptr {
+			switch aType.Elem().Kind() {
+			case reflect.Int:
+				if v, _ := value.(*int); v != nil {
+					value = *v
+				}
+			case reflect.String:
+				if v, _ := value.(*string); v != nil {
+					value = *v
+				}
+
+			case reflect.Float64:
+				if v, _ := value.(*float64); v != nil {
+					value = *v
+				}
+			case reflect.Float32:
+				if v, _ := value.(*float32); v != nil {
+					value = *v
+				}
+			case reflect.Bool:
+				if v, _ := value.(*bool); v != nil {
+					value = *v
+				}
+			}
+			if aType == timePtrType {
+				if v, _ := value.(*time.Time); v != nil {
+					value = *v
+				}
+			}
+		}
+		dest[i] = value
 	}
 	r.pageIndex++
 	r.processedRows++
 	return nil
 }
+
+var timePtrType = reflect.PtrTo(reflect.TypeOf(time.Time{}))
 
 // hasNext returns true if there is next row to fetch.
 func (r *Rows) hasNext() bool {
