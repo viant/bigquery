@@ -35,6 +35,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					i, ok, err := decodeInt(dec)
 					if err != nil || !ok {
+						*(**int64)(dest) = nil
 						return err
 					}
 					v := int64(i)
@@ -56,6 +57,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					i, ok, err := decodeInt(dec)
 					if err != nil || !ok {
+						*(**int32)(dest) = nil
 						return err
 					}
 					v := int32(i)
@@ -76,6 +78,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					i, ok, err := decodeInt(dec)
 					if err != nil || !ok {
+						*(**int16)(dest) = nil
 						return err
 					}
 					v := int16(i)
@@ -96,6 +99,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					i, ok, err := decodeInt(dec)
 					if err != nil || !ok {
+						*(**int8)(dest) = nil
 						return err
 					}
 					v := int8(i)
@@ -116,6 +120,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) (err error) {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 
@@ -136,6 +141,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					i, ok, err := decodeInt(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = i
@@ -175,6 +181,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 					*(**string)(dest) = &text
@@ -194,10 +201,12 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					data, err := base64.StdEncoding.DecodeString(text)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = data
@@ -228,6 +237,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 					*(**string)(dest) = &text
@@ -247,6 +257,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = text
@@ -273,6 +284,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					f, ok, err := decodeFloat(dec)
 					if err != nil || !ok {
+						*(**float32)(dest) = nil
 						return err
 					}
 					v := float32(f)
@@ -293,6 +305,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					f, ok, err := decodeFloat(dec)
 					if err != nil || !ok {
+						*(**float64)(dest) = nil
 						return err
 					}
 					v := float64(f)
@@ -313,6 +326,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					text, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 					*(**string)(dest) = &text
@@ -332,6 +346,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					f, ok, err := decodeFloat(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = f
@@ -357,6 +372,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					val := ""
 					if err := dec.String(&val); err != nil {
+						*(**string)(dest) = nil
 						return err
 					}
 					*(**string)(dest) = &val
@@ -377,6 +393,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeDate(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = ts
@@ -398,6 +415,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 					return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 						ts, ok, err := decodeDate(dec)
 						if err != nil || !ok {
+							*(**time.Time)(dest) = nil
 							return err
 						}
 						*(**time.Time)(dest) = &ts
@@ -430,6 +448,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeTime(dec)
 					if err != nil || !ok {
+						*(**int64)(dest) = nil
 						return err
 					}
 					t := ts.UnixNano()
@@ -451,6 +470,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeTime(dec)
 					if err != nil || !ok {
+						*(**int32)(dest) = nil
 						return err
 					}
 					v := int32(ts.Unix())
@@ -473,6 +493,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeTime(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 					t := ts.Format(time.RFC3339Nano)
@@ -493,6 +514,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeTime(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = ts
@@ -514,6 +536,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 					return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 						ts, ok, err := decodeTime(dec)
 						if err != nil || !ok {
+							*(**time.Time)(dest) = nil
 							return err
 						}
 						*(**time.Time)(dest) = &ts
@@ -522,9 +545,6 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				}
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					ts, ok, err := decodeTime(dec)
-					if err != nil || !ok {
-						return err
-					}
 					if err != nil || !ok {
 						return err
 					}
@@ -542,6 +562,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					b, ok, err := decodeBool(dec)
 					if err != nil || !ok {
+						*(**bool)(dest) = nil
 						return err
 					}
 					*(**bool)(dest) = &b
@@ -562,6 +583,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					b, ok, err := decodeBool(dec)
 					if err != nil || !ok {
+						*(**int8)(dest) = nil
 						return err
 					}
 					v := int8(0)
@@ -589,6 +611,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					b, ok, err := decodeBool(dec)
 					if err != nil || !ok {
+						*(**interface{})(dest) = nil
 						return err
 					}
 					var v interface{} = b
@@ -609,6 +632,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 				return func(dec *gojay.Decoder, dest unsafe.Pointer) error {
 					b, ok, err := decodeString(dec)
 					if err != nil || !ok {
+						*(**string)(dest) = nil
 						return err
 					}
 					*(**string)(dest) = &b
