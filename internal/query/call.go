@@ -42,6 +42,10 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 	SetOptions(c.urlParamsX, opts...)
 
 	res, err := c.doRequest("json")
+	if err != nil {
+		return nil, err
+	}
+
 	if res.Body != nil {
 		data, err := io.ReadAll(res.Body)
 		if err != nil {
