@@ -90,7 +90,7 @@ func init() {
 	}
 
 	values[reflect.Ptr] = func(field reflect.StructField, structAddr unsafe.Pointer) (*bigquery.QueryParameter, error) {
-		item := field.Type.Elem()
+		item := field.Type
 		if field.Offset == 0 && item.Kind() == reflect.Ptr {
 			structAddr = *(*unsafe.Pointer)(structAddr)
 			item = item.Elem()
@@ -415,7 +415,7 @@ func valueKey(aType reflect.Type) reflect.Kind {
 	return key
 }
 
-//NewBoolQueryParameter returns a bool query parameter
+// NewBoolQueryParameter returns a bool query parameter
 func NewBoolQueryParameter(name string, v bool) (*bigquery.QueryParameter, error) {
 	return &bigquery.QueryParameter{
 		Name:          name,
@@ -426,7 +426,7 @@ func NewBoolQueryParameter(name string, v bool) (*bigquery.QueryParameter, error
 	}, nil
 }
 
-//NewIntQueryParameter returns an int query parameter
+// NewIntQueryParameter returns an int query parameter
 func NewIntQueryParameter(name string, v int) (*bigquery.QueryParameter, error) {
 	return &bigquery.QueryParameter{
 		Name:          name,
@@ -437,7 +437,7 @@ func NewIntQueryParameter(name string, v int) (*bigquery.QueryParameter, error) 
 	}, nil
 }
 
-//NewFloatQueryParameter returns a float query parameter
+// NewFloatQueryParameter returns a float query parameter
 func NewFloatQueryParameter(name string, v float64) (*bigquery.QueryParameter, error) {
 	return &bigquery.QueryParameter{
 		Name:          name,
@@ -448,7 +448,7 @@ func NewFloatQueryParameter(name string, v float64) (*bigquery.QueryParameter, e
 	}, nil
 }
 
-//NewStringQueryParameter returns a string query parameter
+// NewStringQueryParameter returns a string query parameter
 func NewStringQueryParameter(name string, v string) (*bigquery.QueryParameter, error) {
 	return &bigquery.QueryParameter{
 		Name:          name,
@@ -460,7 +460,7 @@ func NewStringQueryParameter(name string, v string) (*bigquery.QueryParameter, e
 	}, nil
 }
 
-//NewTimeQueryParameter returns a time query parameter
+// NewTimeQueryParameter returns a time query parameter
 func NewTimeQueryParameter(name string, t *time.Time) (*bigquery.QueryParameter, error) {
 	result := &bigquery.QueryParameter{
 		Name:           name,
@@ -475,7 +475,7 @@ func NewTimeQueryParameter(name string, t *time.Time) (*bigquery.QueryParameter,
 	return result, nil
 }
 
-//NewBigNumericQueryParameter returns a big numeric query parameter
+// NewBigNumericQueryParameter returns a big numeric query parameter
 func NewBigNumericQueryParameter(name string, t *big.Rat) (*bigquery.QueryParameter, error) {
 	result := &bigquery.QueryParameter{
 		Name:           name,
@@ -488,7 +488,7 @@ func NewBigNumericQueryParameter(name string, t *big.Rat) (*bigquery.QueryParame
 	return result, nil
 }
 
-//NewBoolPtrQueryParameter returns an bool query parameter
+// NewBoolPtrQueryParameter returns an bool query parameter
 func NewBoolPtrQueryParameter(name string, v *bool) (*bigquery.QueryParameter, error) {
 	value := ""
 	if v != nil {
@@ -503,7 +503,7 @@ func NewBoolPtrQueryParameter(name string, v *bool) (*bigquery.QueryParameter, e
 	}, nil
 }
 
-//NewIntPtrQueryParameter returns an int query parameter
+// NewIntPtrQueryParameter returns an int query parameter
 func NewIntPtrQueryParameter(name string, v *int) (*bigquery.QueryParameter, error) {
 	value := ""
 	if v != nil {
@@ -518,7 +518,7 @@ func NewIntPtrQueryParameter(name string, v *int) (*bigquery.QueryParameter, err
 	}, nil
 }
 
-//NewFloatPtrQueryParameter returns a float query parameter
+// NewFloatPtrQueryParameter returns a float query parameter
 func NewFloatPtrQueryParameter(name string, v *float64) (*bigquery.QueryParameter, error) {
 	value := ""
 	if v != nil {
@@ -533,7 +533,7 @@ func NewFloatPtrQueryParameter(name string, v *float64) (*bigquery.QueryParamete
 	}, nil
 }
 
-//NewStringPtrQueryParameter returns a string query parameter
+// NewStringPtrQueryParameter returns a string query parameter
 func NewStringPtrQueryParameter(name string, v *string) (*bigquery.QueryParameter, error) {
 	value := ""
 	if v != nil {
@@ -552,7 +552,7 @@ func NewStringPtrQueryParameter(name string, v *string) (*bigquery.QueryParamete
 	return result, nil
 }
 
-//NewBytesQueryParameter  returns bytes query parameter
+// NewBytesQueryParameter  returns bytes query parameter
 func NewBytesQueryParameter(name string, v []byte) (*bigquery.QueryParameter, error) {
 	actual := base64.StdEncoding.EncodeToString(v)
 	return &bigquery.QueryParameter{
@@ -564,7 +564,7 @@ func NewBytesQueryParameter(name string, v []byte) (*bigquery.QueryParameter, er
 	}, nil
 }
 
-//NewSliceQueryParameter returns slice query parameters
+// NewSliceQueryParameter returns slice query parameters
 func NewSliceQueryParameter(name string, values []*bigquery.QueryParameterValue, paramType *bigquery.QueryParameterType) (*bigquery.QueryParameter, error) {
 	return &bigquery.QueryParameter{
 		Name: name,

@@ -21,31 +21,26 @@ var (
 	paramTypeBigNumeric = &bigquery.QueryParameterType{Type: "BIGNUMERIC"}
 )
 
-//Param represents a query param
+// Param represents a query param
 type Param struct {
 	Name  string
 	value interface{}
 }
 
-//QueryParameter returns bigquery QueryParameter
+// QueryParameter returns bigquery QueryParameter
 func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 	val := reflect.ValueOf(p.value)
 	var ptr reflect.Value
 	fn := values[val.Kind()]
-	if val.Kind() == reflect.Ptr {
-		ptr = val
-	} else {
-		ptr = reflect.New(val.Type())
-		ptr.Elem().Set(val)
-	}
-
+	ptr = reflect.New(val.Type())
+	ptr.Elem().Set(val)
 	if fn == nil {
 		return nil, fmt.Errorf("unsupported type: %v", val.Type().String())
 	}
 	return fn(reflect.StructField{Name: p.Name, Type: val.Type()}, unsafe.Pointer(ptr.Pointer()))
 }
 
-//New creates a param
+// New creates a param
 func New(name string, value interface{}) *Param {
 	return &Param{Name: name, value: value}
 }
