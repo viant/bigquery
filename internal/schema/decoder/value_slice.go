@@ -9,6 +9,8 @@ import (
 )
 
 type valueSlice struct {
+	fieldName   string
+	rawPtr      interface{}
 	slice       *xunsafe.Slice
 	ptr         unsafe.Pointer
 	appender    *xunsafe.Appender
@@ -23,19 +25,23 @@ func (o *valueSlice) UnmarshalJSONArray(dec *gojay.Decoder) error {
 	} else {
 		o.unmarshaler.set(ptr)
 	}
-
 	err := dec.Object(o.unmarshaler)
 	return err
 }
 
-func (o *valueSlice) set(value interface{}) {
-	ptr := xunsafe.AsPointer(value)
-	o.ptr = ptr
-	o.appender = o.slice.Appender(ptr)
-	o.appender.Trunc(0)
+func (o *valueSlice) value() interface{} {
+	return o.rawPtr
 }
 
-func (o *valueSlice) UnmarshalJSONObject(dec *gojay.Decoder, _ string) error {
+func (o *valueSlice) set(rawPtr interface{}) {
+	o.rawPtr = rawPtr
+	ptr := xunsafe.AsPointer(rawPtr)
+	o.ptr = ptr
+	o.appender = o.slice.Appender(ptr)
+	//o.appender.Trunc(0)
+}
+
+func (o *valueSlice) UnmarshalJSONObject(dec *gojay.Decoder, k string) error {
 	return dec.Array(o)
 }
 
@@ -54,10 +60,10 @@ func newValueSliceUnmarshaler(field *bigquery.TableFieldSchema, dest reflect.Typ
 		return nil, err
 	}
 	aSlice := xunsafe.NewSlice(dest)
-	return func(value interface{}) Unmarshaler {
-		ptr := xunsafe.AsPointer(value)
+	return func(rawPtr interface{}) Unmarshaler {
+		ptr := xunsafe.AsPointer(rawPtr)
 		appender := aSlice.Appender(ptr)
-		result := &valueSlice{ptr: ptr, appender: appender, slice: aSlice}
+		result := &valueSlice{rawPtr: rawPtr, ptr: ptr, appender: appender, slice: aSlice, fieldName: field.Name}
 		result.newUnmarshaler = newUnmarshaler
 		return result
 	}, nil
