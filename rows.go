@@ -49,10 +49,12 @@ func (r *Rows) Next(dest []driver.Value) error {
 
 	region := r.session.Rows[r.pageIndex]
 	data := r.session.Data[region.Begin:region.End]
+	r.session.Reset()
 	err := gojay.UnmarshalJSONArray(data, r.session.Decoder)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal Array: %w, %s", err, data)
 	}
+
 	for i := range r.session.Pointers {
 		aType := r.session.XTypes[i].Type()
 		value := r.session.XTypes[i].Deref(r.session.Pointers[i])

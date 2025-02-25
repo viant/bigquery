@@ -16,7 +16,6 @@ type Decoder struct {
 
 // SetValues sets values pointer
 func (d *Decoder) SetValues(values []interface{}) {
-
 	d.values = values
 }
 
@@ -43,6 +42,7 @@ func (d *Decoder) UnmarshalJSONArray(dec *gojay.Decoder) error {
 		if d.unmarshalers[i] == nil {
 			d.unmarshalers[i] = d.newUnmarshalers[i](ptr)
 		} else {
+
 			d.unmarshalers[i].set(ptr)
 		}
 		unmarhsaler := d.unmarshalers[i]
