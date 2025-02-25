@@ -48,15 +48,8 @@ func (s *Session) Init(tableSchema *bigquery.TableSchema) error {
 
 func (s *Session) Reset() {
 	for i, t := range s.DestTypes {
-		rType := s.ValuePointers[i].Type()
-		if rType.Kind() == reflect.Ptr {
-			rType = rType.Elem()
-		}
-		switch rType.Kind() { //reinitialize complex types
-		case reflect.Slice, reflect.Struct:
-			s.ValuePointers[i] = reflect.New(t)
-			s.Pointers[i] = s.ValuePointers[i].Interface()
-		}
+		s.ValuePointers[i] = reflect.New(t)
+		s.Pointers[i] = s.ValuePointers[i].Interface()
 	}
 }
 
