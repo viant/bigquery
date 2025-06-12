@@ -11,6 +11,7 @@ import (
 	_ "github.com/viant/afs/mem"
 	"github.com/viant/scy/auth"
 	"github.com/viant/scy/auth/authorizer"
+	"github.com/viant/scy/auth/flow"
 	"github.com/viant/scy/auth/gcp/client"
 	_ "github.com/viant/scy/kms/blowfish"
 
@@ -29,10 +30,11 @@ var defaultScopes = []string{
 
 // OAuth2Manager represents oauth2 manager
 type OAuth2Manager struct {
-	secrets    *scy.Service
-	fs         afs.Service
-	authorizer *authorizer.Service
-	baseURL    string
+	secrets             *scy.Service
+	fs                  afs.Service
+	authorizer          *authorizer.Service
+	newAuthCodeEndpoint func() (flow.Endpoint, error)
+	baseURL             string
 }
 
 func (o *OAuth2Manager) Token(ctx context.Context, config *oauth2.Config, scopes ...string) (*oauth2.Token, error) {
@@ -48,6 +50,7 @@ func (o *OAuth2Manager) Token(ctx context.Context, config *oauth2.Config, scopes
 		AuthFlow:    "Browser",
 		Scopes:      scopes,
 		UsePKCE:     false,
+		NewEndpoint: o.newAuthCodeEndpoint,
 	})
 
 }
@@ -119,6 +122,12 @@ func (o *OAuth2Manager) WithTokenURL(ctx context.Context, token *oauth2.Token) (
 	}
 	err = o.fs.Upload(ctx, URL, file.DefaultFileOsMode, bytes.NewReader(data))
 	return URL, err
+}
+
+func WithNewAuthCodeEndpoint(f func() (flow.Endpoint, error)) OAuth2Option {
+	return func(o *OAuth2Manager) {
+		o.newAuthCodeEndpoint = f
+	}
 }
 
 func NewOAuth2Manager(opts ...OAuth2Option) *OAuth2Manager {
