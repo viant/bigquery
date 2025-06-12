@@ -12,6 +12,7 @@ Please refer to [`CHANGELOG.md`](CHANGELOG.md) if you encounter breaking changes
 - [Benchmark](#benchmark)
 - [License](#license)
 - [Credits and Acknowledgements](#credits-and-acknowledgements)
+- [Custom OAuth 2.0 authentication](#custom-oauth-20-authentication)
 
 This library provides fast implementation of the BigQuery Client as a database/sql drvier.
 
@@ -147,6 +148,132 @@ func ExampleOfCSVLoad() {
 	fmt.Printf("loaded: %v rows", affected)
 }
 ```
+
+## Custom OAuth 2.0 authentication
+
+Sometimes you already have a **Google** OAuth 2.0 client (client-id / secret) and an access or refresh token that
+you would like the driver to use.  
+`OAuth2Manager` can serialise such an `oauth2.Config` together with the corresponding `oauth2.Token` and make them
+addressable via URLs that you embed in the DSN.
+
+### Step-by-step example
+
+```go
+package main
+
+import (
+    "context"
+    "database/sql"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/url"
+    "time"
+
+    _ "github.com/viant/bigquery"
+    "github.com/viant/bigquery"
+
+    "golang.org/x/oauth2"
+)
+
+func main() {
+    projectID := "my-project"
+    datasetID := "my_dataset"
+
+    // 1. Build the OAuth2 client configuration. In real life you would usually
+    //    load this from a secret manager or configuration file.
+    // IMPORTANT: the endpoints **must** be Google's authorization server
+    // endpoints; BigQuery only accepts Google-issued access tokens.
+    oauthCfg := &oauth2.Config{
+        ClientID:     "<CLIENT_ID>",
+        ClientSecret: "<CLIENT_SECRET>",
+        Endpoint: oauth2.Endpoint{
+            AuthURL:  "https://accounts.google.com/o/oauth2/v2/auth",
+            TokenURL: "https://oauth2.googleapis.com/token",
+        },
+        RedirectURL: "http://localhost/oauth2callback",
+        Scopes:      []string{"https://www.googleapis.com/auth/bigquery"},
+    }
+
+    // 2. Provide a *valid* access or refresh token obtained beforehand.
+    //    The token expiry _must_ be set so that the helper can decide when to
+    //    refresh it.
+    oauthToken := &oauth2.Token{
+        AccessToken:  "<ACCESS_TOKEN>",
+        RefreshToken: "<REFRESH_TOKEN>", // optional – only when you want automatic refresh
+        TokenType:    "Bearer",
+        Expiry:       time.Now().Add(time.Hour),
+    }
+
+    // 3. Serialise both config and token to in-memory URLs that can be used in
+    //    the DSN. You may also store them in any other fs supported by Afero
+    //    (e.g. Google Cloud Storage, local disk, S3, …).
+    helper := bigquery.NewOAuth2Manager()
+    ctx := context.Background()
+
+    cfgURL, err := helper.WithConfigURL(ctx, oauthCfg)
+    if err != nil {
+        log.Fatalf("failed to persist oauth2 config: %v", err)
+    }
+
+    tokenURL, err := helper.WithTokenURL(ctx, oauthToken)
+    if err != nil {
+        log.Fatalf("failed to persist oauth2 token: %v", err)
+    }
+
+    // 4. Build the DSN using the two generated URLs. Be sure to URL-escape them
+    //    because the DSN itself is an URL as well.
+    dsn := fmt.Sprintf(
+        "bigquery://%s/%s?oauth2ClientURL=%s&oauth2TokenURL=%s",
+        projectID,
+        datasetID,
+        url.QueryEscape(cfgURL),
+        url.QueryEscape(tokenURL),
+    )
+
+    db, err := sql.Open("bigquery", dsn)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    // Now use the db as usual – the driver will pick the token source built
+    // from your custom OAuth2 config and token and will automatically refresh
+    // the access token when it expires.
+    var version string
+    if err := db.QueryRowContext(ctx, "SELECT version()" ).Scan(&version); err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("connected, BigQuery engine version: %s\n", version)
+
+    // For demonstration purposes print the DSN with the embedded URLs so that
+    // you can see what happens under the hood.
+    if raw, _ := json.MarshalIndent(struct {
+        DSN       string `json:"dsn"`
+        ConfigURL string `json:"oauth2ClientURL"`
+        TokenURL  string `json:"oauth2TokenURL"`
+    }{dsn, cfgURL, tokenURL}, "", "  "); raw != nil {
+        fmt.Printf("%s\n", raw)
+    }
+}
+```
+
+**Important notes**
+
+1. `OAuth2Manager` uses an in-memory ( `mem://` ) file-system backend by default.  
+   The URLs produced in the example therefore live only for the lifetime of the
+   current process.  If you want to persist them, provide your own `afs.Service`
+   or store the JSON blobs yourself and pass their URLs in the DSN – the driver
+   only requires that the URLs are reachable, not that they were created by
+   `OAuth2Manager`.
+2. The provided token **must** have the `Expiry` field set.  When the expiry is
+   reached the token will be refreshed automatically using the refresh token
+   and the OAuth2 endpoint supplied in the config.
+3. The `oauth2.Config.Endpoint` **must** point to Google's authorization server
+   (`https://accounts.google.com/o/oauth2/v2/auth` and
+   `https://oauth2.googleapis.com/token`).  BigQuery accepts only Google-issued
+   access tokens.
+
 
 ### Loading application data
 

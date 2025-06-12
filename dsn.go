@@ -12,18 +12,20 @@ import (
 )
 
 const (
-	bigqueryScheme  = "bigquery"
-	credentialsJSON = "credJSON"
-	credentialsURL  = "credURL"
-	credentialsKey  = "credKey"
-	credID          = "credID"
-	endpoint        = "endpoint"
-	userAgent       = "ua"
-	apiKey          = "apiKey"
-	quotaProject    = "quotaProject"
-	scopes          = "scopes"
-	app             = "app"
-	defaultApp      = "go-sql-bq"
+	bigqueryScheme     = "bigquery"
+	credentialsJSON    = "credJSON"
+	credentialsURL     = "credURL"
+	credentialsKey     = "credKey"
+	credID             = "credID"
+	oAuth2ConfigURLKey = "oauth2ClientURL"
+	oAuth2TokenURLKey  = "oauth2TokenURL"
+	endpoint           = "endpoint"
+	userAgent          = "ua"
+	apiKey             = "apiKey"
+	quotaProject       = "quotaProject"
+	scopes             = "scopes"
+	app                = "app"
+	defaultApp         = "go-sql-bq"
 )
 
 // Config is a configuration parsed from a DSN string.
@@ -44,6 +46,8 @@ type Config struct {
 	Scopes          []string
 	Location        string
 	App             string
+	OAuth2ConfigURL string
+	OAuth2TokenURL  string
 	url.Values
 }
 
@@ -115,6 +119,12 @@ func ParseDSN(dsn string) (*Config, error) {
 		}
 		if _, ok := cfg.Values[apiKey]; ok {
 			cfg.APIKey = cfg.Values.Get(apiKey)
+		}
+		if _, ok := cfg.Values[oAuth2ConfigURLKey]; ok {
+			cfg.OAuth2ConfigURL = cfg.Values.Get(oAuth2ConfigURLKey)
+		}
+		if _, ok := cfg.Values[oAuth2TokenURLKey]; ok {
+			cfg.OAuth2TokenURL = cfg.Values.Get(oAuth2TokenURLKey)
 		}
 		if _, ok := cfg.Values[app]; ok {
 			cfg.App = cfg.Values.Get(app)

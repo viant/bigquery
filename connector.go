@@ -20,28 +20,54 @@ type connector struct {
 
 var globalOptions []option.ClientOption
 
-//SetOptions sets global client options
+// SetOptions sets global client options
 func SetOptions(opts ...option.ClientOption) {
 	globalOptions = opts
 }
 
-//Connect connects to database
+// Connect connects to database
 func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	options := c.cfg.options()
+
+	//If both OAuth2 token and config URLs are provided, build token source and use it.
+	tokenSourceProvided := false
+	if c.cfg.OAuth2ConfigURL != "" && c.cfg.OAuth2TokenURL != "" {
+		helper := NewOAuth2Manager()
+		oauthCfg, err := helper.ConfigFromURL(ctx, c.cfg.OAuth2ConfigURL)
+		if err != nil {
+			return nil, err
+		}
+		oauthToken, err := helper.TokenFromURL(ctx, c.cfg.OAuth2TokenURL)
+		if err != nil {
+			return nil, err
+		}
+		src, err := helper.TokenSource(ctx, oauthCfg, oauthToken)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, option.WithTokenSource(src))
+		tokenSourceProvided = true
+	}
+
 	if len(c.options) > 0 {
 		options = append(options, c.options...)
 	} else if len(globalOptions) > 0 {
 		options = append(options, globalOptions...)
 	}
-	isAuth := isAuth(options)
 
-	if !c.cfg.hasCred() && !isAuth {
+	isAuthOpt := isAuth(options)
+	if tokenSourceProvided {
+		isAuthOpt = true
+	}
+
+	if !c.cfg.hasCred() && !isAuthOpt {
 		gcpService := gcp.New(client.NewGCloud())
 		httpClient, err := gcpService.AuthClient(context.Background(), append(gcp.Scopes, "https://www.googleapis.com/auth/bigquery")...)
 		if err == nil && httpClient != nil {
 			options = append(options, option.WithHTTPClient(httpClient))
 		}
 	}
+
 	service, err := bigquery.NewService(ctx, options...)
 	if err != nil {
 		return nil, err
@@ -77,7 +103,7 @@ func isAuth(options []option.ClientOption) bool {
 	return false
 }
 
-//Driver returns a driver
+// Driver returns a driver
 func (c *connector) Driver() driver.Driver {
 	return &Driver{}
 }
