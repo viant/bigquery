@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"cloud.google.com/go/civil"
 	"encoding/base64"
 	"fmt"
 	"github.com/francoispqt/gojay"
@@ -20,7 +21,12 @@ type Unmarshaler interface {
 // newUnmarshaler represents a marshaler constructor
 type newUnmarshaler func(ptr interface{}) Unmarshaler
 
-var timeType = reflect.TypeOf(time.Time{})
+var (
+	timeType         = reflect.TypeOf(time.Time{})
+	civilDateType     = reflect.TypeOf(civil.Date{})
+	civilTimeType     = reflect.TypeOf(civil.Time{})
+	civilDateTimeType = reflect.TypeOf(civil.DateTime{})
+)
 
 // decodeValue decode JSON value
 func decodeValue[T any](isPointer bool, decode func(dec *gojay.Decoder) (T, bool, error)) func(dec *gojay.Decoder, dest unsafe.Pointer) error {
@@ -106,8 +112,11 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		case reflect.String:
 			return decodeValue[string](isPtr, decodeString), nil
 		case reflect.Interface:
-			return decodeValue[interface{}](isPtr, decodeDateInterface), nil
+			return decodeValue[interface{}](isPtr, decodeCivilDateInterface), nil
 		case reflect.Struct:
+			if targetType.ConvertibleTo(civilDateType) {
+				return decodeValue[civil.Date](isPtr, decodeCivilDate), nil
+			}
 			if targetType.ConvertibleTo(timeType) {
 				return decodeValue[time.Time](isPtr, decodeDate), nil
 			}
@@ -115,7 +124,35 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		default:
 			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
 		}
-	case "TIME", "TIMESTAMP", "DATETIME":
+	case "TIME":
+		switch targetType.Kind() {
+		case reflect.String:
+			return decodeValue[string](isPtr, decodeString), nil
+		case reflect.Interface:
+			return decodeValue[interface{}](isPtr, decodeCivilTimeInterface), nil
+		case reflect.Struct:
+			if targetType.ConvertibleTo(civilTimeType) {
+				return decodeValue[civil.Time](isPtr, decodeCivilTime), nil
+			}
+			fallthrough
+		default:
+			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
+		}
+	case "DATETIME":
+		switch targetType.Kind() {
+		case reflect.String:
+			return decodeValue[string](isPtr, decodeString), nil
+		case reflect.Interface:
+			return decodeValue[interface{}](isPtr, decodeCivilDateTimeInterface), nil
+		case reflect.Struct:
+			if targetType.ConvertibleTo(civilDateTimeType) {
+				return decodeValue[civil.DateTime](isPtr, decodeCivilDateTime), nil
+			}
+			fallthrough
+		default:
+			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
+		}
+	case "TIMESTAMP":
 		switch targetType.Kind() {
 		case reflect.Uint, reflect.Int, reflect.Int64, reflect.Uint64:
 			return decodeValue[int64](isPtr, decodeTimeUnixNano), nil
@@ -365,4 +402,77 @@ func decodeString(dec *gojay.Decoder) (string, bool, error) {
 		return "", false, err
 	}
 	return *value, true, nil
+}
+
+// decodeCivilDate decodes a BigQuery DATE string (YYYY-MM-DD) into civil.Date
+func decodeCivilDate(dec *gojay.Decoder) (civil.Date, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return civil.Date{}, false, err
+	}
+	if v == "" {
+		return civil.Date{}, true, nil
+	}
+	d, err := civil.ParseDate(v)
+	return d, true, err
+}
+
+// decodeCivilTime decodes a BigQuery TIME string (HH:MM:SS[.ffffff]) into civil.Time
+func decodeCivilTime(dec *gojay.Decoder) (civil.Time, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return civil.Time{}, false, err
+	}
+	if v == "" {
+		return civil.Time{}, true, nil
+	}
+	t, err := civil.ParseTime(v)
+	return t, true, err
+}
+
+// decodeCivilDateTime decodes a BigQuery DATETIME string (YYYY-MM-DD HH:MM:SS[.ffffff]) into civil.DateTime
+// BigQuery uses space separator, but civil.ParseDateTime expects 'T', so we convert it
+func decodeCivilDateTime(dec *gojay.Decoder) (civil.DateTime, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return civil.DateTime{}, false, err
+	}
+	if v == "" {
+		return civil.DateTime{}, true, nil
+	}
+	// BigQuery DATETIME format uses space: "YYYY-MM-DD HH:MM:SS[.ffffff]"
+	// civil.ParseDateTime expects RFC3339-like: "YYYY-MM-DDTHH:MM:SS[.ffffff]"
+	// Replace the first space with 'T'
+	if len(v) > 10 && v[10] == ' ' {
+		v = v[:10] + "T" + v[11:]
+	}
+	dt, err := civil.ParseDateTime(v)
+	return dt, true, err
+}
+
+// decodeCivilDateInterface decodes DATE as interface{} returning civil.Date
+func decodeCivilDateInterface(dec *gojay.Decoder) (interface{}, bool, error) {
+	v, ok, err := decodeCivilDate(dec)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	return v, true, nil
+}
+
+// decodeCivilTimeInterface decodes TIME as interface{} returning civil.Time
+func decodeCivilTimeInterface(dec *gojay.Decoder) (interface{}, bool, error) {
+	v, ok, err := decodeCivilTime(dec)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	return v, true, nil
+}
+
+// decodeCivilDateTimeInterface decodes DATETIME as interface{} returning civil.DateTime
+func decodeCivilDateTimeInterface(dec *gojay.Decoder) (interface{}, bool, error) {
+	v, ok, err := decodeCivilDateTime(dec)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	return v, true, nil
 }
