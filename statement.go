@@ -133,12 +133,23 @@ func checkQueryParameters(query string) int {
 	for i, c := range query {
 		switch c {
 		case '\'':
-			if i > 1 && inQuote && query[i-1] == '\\' {
+			if i > 0 && inQuote && query[i-1] == '\\' {
 				continue
 			}
 			inQuote = !inQuote
-		case '?', '@':
+		case '?':
 			if !inQuote {
+				count++
+			}
+		case '@':
+			if inQuote {
+				continue
+			}
+			if i+1 >= len(query) {
+				continue
+			}
+			next := query[i+1]
+			if (next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z') || next == '_' {
 				count++
 			}
 		}
