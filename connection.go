@@ -80,6 +80,7 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 	}
 
 	configQuery.Query = query
+	configQuery.Priority = c.cfg.Priority
 	if c.cfg.DatasetID != "" {
 		configQuery.DefaultDataset = &bigquery.DatasetReference{
 			ProjectId: c.projectID,
