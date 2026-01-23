@@ -5,10 +5,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/viant/bigquery/internal/hint"
 	"github.com/viant/bigquery/internal/ingestion"
 	"google.golang.org/api/bigquery/v2"
-	"strings"
 )
 
 type connection struct {
@@ -80,7 +81,10 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 	}
 
 	configQuery.Query = query
-	configQuery.Priority = c.cfg.Priority
+	// Only set priority from config if not already set by a hint
+	if configQuery.Priority == "" {
+		configQuery.Priority = c.cfg.Priority
+	}
 	if c.cfg.DatasetID != "" {
 		configQuery.DefaultDataset = &bigquery.DatasetReference{
 			ProjectId: c.projectID,
@@ -91,7 +95,7 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 	return job, nil
 }
 
-//Ping pings server
+// Ping pings server
 func (c *connection) Ping(ctx context.Context) error {
 	return nil
 }
@@ -112,12 +116,12 @@ func (c *connection) Close() error {
 	return nil
 }
 
-//ResetSession resets session
+// ResetSession resets session
 func (c *connection) ResetSession(ctx context.Context) error {
 	return nil
 }
 
-//IsValid check is connection is valid
+// IsValid check is connection is valid
 func (c *connection) IsValid() bool {
 	return true
 }
