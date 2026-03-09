@@ -3,9 +3,10 @@ package param
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/api/bigquery/v2"
-	"testing"
 )
 
 func TestParam_QueryParameterNew(t *testing.T) {
@@ -78,7 +79,9 @@ func TestParam_QueryParameterNew(t *testing.T) {
 
 		if !assert.EqualValues(t, expect, queryParam, testCase.description) {
 			actual, _ := json.Marshal(queryParam)
-			fmt.Println(string(actual))
+			wexpect, _ := json.Marshal(expect)
+			fmt.Println(fmt.Sprintf("wexpect: %s", string(wexpect)))
+			fmt.Println(fmt.Sprintf("wectual: %s", string(actual)))
 		}
 	}
 

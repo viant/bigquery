@@ -27,6 +27,7 @@ const (
 	app                = "app"
 	defaultApp         = "go-sql-bq"
 	priority           = "priority"
+	reservation        = "reservation"
 
 	// Priority values
 	PriorityInteractive = "INTERACTIVE"
@@ -53,7 +54,8 @@ type Config struct {
 	App             string
 	OAuth2ConfigURL string
 	OAuth2TokenURL  string
-	Priority        string // Job priority: "INTERACTIVE" (default) or "BATCH"
+	Priority    string // Job priority: "INTERACTIVE" (default) or "BATCH"
+	Reservation string // Reservation for query jobs: "projects/{project}/locations/{location}/reservations/{reservation}"
 	url.Values
 }
 
@@ -155,6 +157,9 @@ func ParseDSN(dsn string) (*Config, error) {
 		}
 		if _, ok := cfg.Values[priority]; ok {
 			cfg.Priority = strings.ToUpper(cfg.Values.Get(priority))
+		}
+		if _, ok := cfg.Values[reservation]; ok {
+			cfg.Reservation = cfg.Values.Get(reservation)
 		}
 	}
 
