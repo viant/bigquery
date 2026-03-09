@@ -79,9 +79,6 @@ func TestParam_QueryParameterNew(t *testing.T) {
 
 		if !assert.EqualValues(t, expect, queryParam, testCase.description) {
 			actual, _ := json.Marshal(queryParam)
-			wexpect, _ := json.Marshal(expect)
-			fmt.Println(fmt.Sprintf("wexpect: %s", string(wexpect)))
-			fmt.Println(fmt.Sprintf("wectual: %s", string(actual)))
 		}
 	}
 
