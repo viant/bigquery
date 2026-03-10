@@ -92,6 +92,9 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 		}
 	}
 	job.Configuration.Query = configQuery
+	if c.cfg.Reservation != "" {
+		job.Configuration.Reservation = c.cfg.Reservation
+	}
 	return job, nil
 }
 

@@ -3,9 +3,10 @@ package param
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/api/bigquery/v2"
-	"testing"
 )
 
 func TestParam_QueryParameterNew(t *testing.T) {
