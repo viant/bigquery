@@ -5,16 +5,21 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRows_Next(t *testing.T) {
+	os.Setenv("GCP_PROJECT_ID", "viant-adelphic")
+
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/Users/ppoudyal/.secrets/viant-e2e.json")
 
 	projectID := os.Getenv("GCP_PROJECT")
+
 	if projectID == "" {
 		t.Skip("set GCP_PROJECT and GOOGLE_APPLICATION_CREDENTIALS before running test")
 		return
@@ -119,6 +124,18 @@ func TestRows_Next(t *testing.T) {
 			expect: [][]interface{}{
 				{
 					os.Getenv("GCP_PROJECT"),
+				},
+			},
+		},
+		{
+			description: "HintWithCompleteSQL hint ",
+			SQL: "SELECT  /*+ {\"UseLegacySql\": true} +*/ " +
+				" request.xid" +
+				"FROM viant-adelphic.adlogs.ad_v1 where request.xid = ?",
+			params: []interface{}{"c7e1d844-4df3-11ea-ad41-472a3943b0a0"},
+			expect: [][]interface{}{
+				{
+					"xid", "c7e1d844-4df3-11ea-ad41-472a3943b0a0",
 				},
 			},
 		},

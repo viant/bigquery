@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-//ExampleRowsNext fetching rows example
+// ExampleRowsNext fetching rows example
 func ExampleRowsNext() {
 
 	type Participant struct {
@@ -28,7 +28,7 @@ func ExampleRowsNext() {
 		 	 STRUCT("Frank" as name, [23.4, 26.3] as splits)
 			]
 		       AS participants)
-		SELECT
+		SELECT /*+ {\"UseLegacySql\": true} +*/ 
 		  race,
 		  participant
 		FROM races r

@@ -121,6 +121,11 @@ VALUES
   ( cc.id,cc.first_name,cc.last_name,cc.email );`,
 			exepcted: 1,
 		},
+		{
+			description: "legacy decorator",
+			SQL:         `SELECT * FROM [project:dataset.table@1700000000000-1700003600000]`,
+			exepcted:    0,
+		},
 	}
 
 	for _, testCase := range testCases {

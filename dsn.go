@@ -26,6 +26,12 @@ const (
 	scopes             = "scopes"
 	app                = "app"
 	defaultApp         = "go-sql-bq"
+	priority           = "priority"
+	reservation        = "reservation"
+
+	// Priority values
+	PriorityInteractive = "INTERACTIVE"
+	PriorityBatch       = "BATCH"
 )
 
 // Config is a configuration parsed from a DSN string.
@@ -48,6 +54,8 @@ type Config struct {
 	App             string
 	OAuth2ConfigURL string
 	OAuth2TokenURL  string
+	Priority    string // Job priority: "INTERACTIVE" (default) or "BATCH"
+	Reservation string // Reservation for query jobs: "projects/{project}/locations/{location}/reservations/{reservation}"
 	url.Values
 }
 
@@ -147,6 +155,12 @@ func ParseDSN(dsn string) (*Config, error) {
 		if _, ok := cfg.Values[scopes]; ok {
 			cfg.Scopes = cfg.Values[scopes]
 		}
+		if _, ok := cfg.Values[priority]; ok {
+			cfg.Priority = strings.ToUpper(cfg.Values.Get(priority))
+		}
+		if _, ok := cfg.Values[reservation]; ok {
+			cfg.Reservation = cfg.Values.Get(reservation)
+		}
 	}
 
 	if cfg.CredentialsKey != "" {
@@ -164,6 +178,9 @@ func ParseDSN(dsn string) (*Config, error) {
 	}
 	if cfg.Location == "" {
 		cfg.Location = "us"
+	}
+	if cfg.Priority == "" {
+		cfg.Priority = PriorityInteractive
 	}
 	return cfg, nil
 }
