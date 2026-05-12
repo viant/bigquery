@@ -115,7 +115,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		default:
 			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
 		}
-	case "TIME", "TIMESTAMP", "DATETIME":
+	case "TIMESTAMP":
 		switch targetType.Kind() {
 		case reflect.Uint, reflect.Int, reflect.Int64, reflect.Uint64:
 			return decodeValue[int64](isPtr, decodeTimeUnixNano), nil
@@ -128,6 +128,34 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		case reflect.Struct:
 			if targetType.ConvertibleTo(timeType) {
 				return decodeValue[time.Time](isPtr, decodeTime), nil
+			}
+			fallthrough
+		default:
+			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
+		}
+	case "DATETIME":
+		switch targetType.Kind() {
+		case reflect.String:
+			return decodeValue[string](isPtr, decodeString), nil
+		case reflect.Interface:
+			return decodeValue[interface{}](isPtr, decodeDateTimeInterface), nil
+		case reflect.Struct:
+			if targetType.ConvertibleTo(timeType) {
+				return decodeValue[time.Time](isPtr, decodeDateTime), nil
+			}
+			fallthrough
+		default:
+			return nil, fmt.Errorf("unsupporter !! binding type %v to %s", sourceType, targetType.String())
+		}
+	case "TIME":
+		switch targetType.Kind() {
+		case reflect.String:
+			return decodeValue[string](isPtr, decodeString), nil
+		case reflect.Interface:
+			return decodeValue[interface{}](isPtr, decodeTimeOfDayInterface), nil
+		case reflect.Struct:
+			if targetType.ConvertibleTo(timeType) {
+				return decodeValue[time.Time](isPtr, decodeTimeOfDay), nil
 			}
 			fallthrough
 		default:
@@ -208,6 +236,74 @@ func decodeDate(dec *gojay.Decoder) (time.Time, bool, error) {
 	}
 	t, err := time.Parse("2006-01-02", v)
 	return t, true, err
+}
+
+var dateTimeLayouts = []string{
+	"2006-01-02T15:04:05.999999",
+	"2006-01-02T15:04:05.99999",
+	"2006-01-02T15:04:05.9999",
+	"2006-01-02T15:04:05.999",
+	"2006-01-02T15:04:05.99",
+	"2006-01-02T15:04:05.9",
+	"2006-01-02T15:04:05",
+}
+
+func decodeDateTime(dec *gojay.Decoder) (time.Time, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return time.Time{}, false, err
+	}
+	if v == "" {
+		return time.Time{}, true, nil
+	}
+	for _, layout := range dateTimeLayouts {
+		if t, err := time.ParseInLocation(layout, v, time.UTC); err == nil {
+			return t, true, nil
+		}
+	}
+	return time.Time{}, false, fmt.Errorf("unable to parse DATETIME: %s", v)
+}
+
+func decodeDateTimeInterface(dec *gojay.Decoder) (interface{}, bool, error) {
+	v, ok, err := decodeDateTime(dec)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	return v, true, nil
+}
+
+var timeOfDayLayouts = []string{
+	"15:04:05.999999",
+	"15:04:05.99999",
+	"15:04:05.9999",
+	"15:04:05.999",
+	"15:04:05.99",
+	"15:04:05.9",
+	"15:04:05",
+}
+
+func decodeTimeOfDay(dec *gojay.Decoder) (time.Time, bool, error) {
+	v := ""
+	if err := dec.String(&v); err != nil {
+		return time.Time{}, false, err
+	}
+	if v == "" {
+		return time.Time{}, true, nil
+	}
+	for _, layout := range timeOfDayLayouts {
+		if t, err := time.ParseInLocation(layout, v, time.UTC); err == nil {
+			return t, true, nil
+		}
+	}
+	return time.Time{}, false, fmt.Errorf("unable to parse TIME: %s", v)
+}
+
+func decodeTimeOfDayInterface(dec *gojay.Decoder) (interface{}, bool, error) {
+	v, ok, err := decodeTimeOfDay(dec)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	return v, true, nil
 }
 
 func decodeInt(dec *gojay.Decoder) (int, bool, error) {
