@@ -90,13 +90,13 @@ func isAuth(options []option.ClientOption) bool {
 	}
 	for _, opt := range options {
 		if _, ok := opt.(oauth2.TokenSource); ok {
-			return ok
-		}
-		if _, ok := opt.(oauth2.TokenSource); ok {
-			return ok
+			return true
 		}
 		optName := reflect.TypeOf(opt).String()
-		if strings.Contains(optName, "HTTP") || strings.Contains(optName, "Creds") {
+		// WithCredentialsJSON is option.withCredentialsJSON — match "Credentials", not just "Creds".
+		if strings.Contains(optName, "HTTP") ||
+			strings.Contains(optName, "Creds") ||
+			strings.Contains(optName, "Credentials") {
 			return true
 		}
 	}
