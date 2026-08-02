@@ -13,11 +13,12 @@ const (
 	StatusDone = "DONE"
 )
 
-//WaitForJobCompletion waits for job completion
+// WaitForJobCompletion waits for job completion
 func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projectID string, location, jobReferenceID string) (*bigquery.Job, error) {
 	var job *bigquery.Job
 	var err error
 	waitTime := 30 * time.Millisecond
+	maxWaitTime := 2 * time.Second
 	for {
 		err = RunWithRetries(func() error {
 			statusCall := service.Jobs.Get(projectID, jobReferenceID)
@@ -25,11 +26,24 @@ func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 			job, err = statusCall.Context(ctx).Do()
 			return err
 		}, 3)
-		if err == nil && job.Status.State == StatusDone {
+		if err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return job, ctxErr
+			}
+			return job, err
+		}
+		if job != nil && job.Status != nil && job.Status.State == StatusDone {
 			break
 		}
-		waitTime = (waitTime*2 + 1) % 1000
-		time.Sleep(waitTime)
+		select {
+		case <-ctx.Done():
+			return job, ctx.Err()
+		case <-time.After(waitTime):
+		}
+		waitTime *= 2
+		if waitTime > maxWaitTime {
+			waitTime = maxWaitTime
+		}
 	}
 	if job != nil && job.Status != nil && job.Status.ErrorResult != nil {
 		errors, _ := json.Marshal(job.Status.Errors)
