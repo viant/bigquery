@@ -28,6 +28,7 @@ func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 		}, 3)
 		if err != nil {
 			if ctxErr := ctx.Err(); ctxErr != nil {
+				cancelJob(service, projectID, location, jobReferenceID)
 				return job, ctxErr
 			}
 			return job, err
@@ -37,6 +38,7 @@ func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 		}
 		select {
 		case <-ctx.Done():
+			cancelJob(service, projectID, location, jobReferenceID)
 			return job, ctx.Err()
 		case <-time.After(waitTime):
 		}
@@ -50,4 +52,13 @@ func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 		return job, fmt.Errorf("%v: %s", job.Status.ErrorResult.Message, errors)
 	}
 	return job, err
+}
+
+func cancelJob(service *bigquery.Service, projectID string, location, jobReferenceID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cancelCall := service.Jobs.Cancel(projectID, jobReferenceID)
+	cancelCall.Location(location)
+	_, _ = cancelCall.Context(ctx).Do()
 }
