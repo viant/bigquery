@@ -23,7 +23,7 @@ The BigQuery driver accepts the following DSN
 * 'bigquery://projectID/[location/]datasetID?queryString'
 
   Where queryString can optionally configure the following option:
-    - credURL: (url encoded) local location or URL supported by [Scy](https://github.com/viant/scy), including `op://` 1Password references (requires scy with `github.com/viant/afsc/op`)
+    - credURL: (url encoded) local location or URL supported by [Scy](https://github.com/viant/scy), including `op://` 1Password references (registered via `github.com/viant/afsc/op` in the driver)
     - credKey: optional (url encoded) [Scy](https://github.com/viant/scy) secret manager key or key location
     - credID: [Scy](https://github.com/viant/scy) resource secret ID
     - credJSON: rawURL base64 encoded cred JSON (not recommended)
