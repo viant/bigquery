@@ -6,7 +6,6 @@ import (
 	"github.com/viant/scy/auth/gcp"
 	"github.com/viant/scy/auth/gcp/client"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/option"
 	"reflect"
@@ -81,22 +80,15 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 }
 
 func isAuth(options []option.ClientOption) bool {
-	credentials, _ := google.FindDefaultCredentials(context.Background())
-	if credentials != nil {
-		return true
-	}
 	if len(options) == 0 {
 		return false
 	}
 	for _, opt := range options {
 		if _, ok := opt.(oauth2.TokenSource); ok {
-			return ok
-		}
-		if _, ok := opt.(oauth2.TokenSource); ok {
-			return ok
+			return true
 		}
 		optName := reflect.TypeOf(opt).String()
-		if strings.Contains(optName, "HTTP") || strings.Contains(optName, "Creds") {
+		if strings.Contains(optName, "Credentials") || strings.Contains(optName, "HTTP") {
 			return true
 		}
 	}
