@@ -3,14 +3,17 @@ package bigquery
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
+	"os"
+	"reflect"
+	"strings"
+
 	"github.com/viant/scy/auth/gcp"
 	"github.com/viant/scy/auth/gcp/client"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/option"
-	"reflect"
-	"strings"
 )
 
 type connector struct {
@@ -59,12 +62,21 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if tokenSourceProvided {
 		isAuthOpt = true
 	}
+	if len(globalOptions) > 0 {
+		isAuthOpt = true
+	}
 
 	if !c.cfg.hasCred() && !isAuthOpt {
-		gcpService := gcp.New(client.NewGCloud())
-		httpClient, err := gcpService.AuthClient(context.Background(), append(gcp.Scopes, "https://www.googleapis.com/auth/bigquery")...)
-		if err == nil && httpClient != nil {
-			options = append(options, option.WithHTTPClient(httpClient))
+		// Default: never open a browser OAuth flow (that defeats service-account / op:// e2e).
+		// Opt in only with BIGQUERY_ALLOW_BROWSER_AUTH=true for interactive local hacking.
+		if os.Getenv("BIGQUERY_ALLOW_BROWSER_AUTH") == "true" {
+			gcpService := gcp.New(client.NewGCloud())
+			httpClient, err := gcpService.AuthClient(context.Background(), append(gcp.Scopes, "https://www.googleapis.com/auth/bigquery")...)
+			if err == nil && httpClient != nil {
+				options = append(options, option.WithHTTPClient(httpClient))
+			}
+		} else {
+			return nil, fmt.Errorf("bigquery: no credentials (set DSN credURL/credJSON, call SetOptions, or GOOGLE_APPLICATION_CREDENTIALS); refusing browser OAuth (set BIGQUERY_ALLOW_BROWSER_AUTH=true to override)")
 		}
 	}
 

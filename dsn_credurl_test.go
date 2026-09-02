@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,17 +12,8 @@ import (
 	"google.golang.org/api/option"
 )
 
-func TestMain(m *testing.M) {
-	_, filename, _, ok := runtime.Caller(0)
-	if ok {
-		fakeOP := filepath.Join(filepath.Dir(filename), "testdata", "fake-op.sh")
-		_ = os.Setenv("OP_CLI", fakeOP)
-	}
-	os.Exit(m.Run())
-}
-
 func TestParseDSN_credURLOp(t *testing.T) {
-	opRef := "op://Private/viant-e2e.json/notesPlain"
+	opRef := "op://Private/e2e-account.json/notesPlain"
 	dsn := "bigquery://viant-e2e/mdp?credURL=" + url.QueryEscape(opRef)
 
 	cfg, err := ParseDSN(dsn)

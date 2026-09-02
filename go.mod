@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
 	github.com/viant/afs v1.25.1-0.20231110184132-877ed98abca1
+	github.com/viant/afsc v1.9.1
 	github.com/viant/assertly v0.9.1-0.20220620174148-bab013f93a60
 	github.com/viant/parsly v0.0.0-20220907184615-a27c125714a1
 	github.com/viant/scy v0.25.0
@@ -56,3 +57,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/viant/afsc => /Users/rprice/project/afsc
