@@ -23,7 +23,7 @@ The BigQuery driver accepts the following DSN
 * 'bigquery://projectID/[location/]datasetID?queryString'
 
   Where queryString can optionally configure the following option:
-    - credURL: (url encoded) local location or URL supported by  [Scy](https://github.com/viant/scy)
+    - credURL: (url encoded) local location or URL supported by [Scy](https://github.com/viant/scy), including `op://` 1Password references (registered via `github.com/viant/afsc/op` in the driver)
     - credKey: optional (url encoded) [Scy](https://github.com/viant/scy) secret manager key or key location
     - credID: [Scy](https://github.com/viant/scy) resource secret ID
     - credJSON: rawURL base64 encoded cred JSON (not recommended)
@@ -34,7 +34,9 @@ The BigQuery driver accepts the following DSN
     - scopes
 
 Since this library uses [Google Cloud API](google.golang.org/api/bigquery/v2)
-you can pass your credentials via GOOGLE_APPLICATION_CREDENTIALS environment variable.
+you can pass your credentials via GOOGLE_APPLICATION_CREDENTIALS environment variable when no credentials are configured in the DSN or via `SetOptions`.
+
+When `credURL`, `credJSON`, or `SetOptions`/`WithCredentialsJSON` is used, `GOOGLE_APPLICATION_CREDENTIALS` is not required.
 
 ## Usage:
 
