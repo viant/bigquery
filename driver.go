@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+
+	_ "github.com/viant/afsc/op"
 	"google.golang.org/api/option"
 )
 
