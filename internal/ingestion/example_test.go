@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ExampleNewService() {
+func Example_load() {
 	projectID := "my-gcp-project"
 	db, err := sql.Open("bigquery", fmt.Sprintf("bigquery://%v/test", projectID))
 	if err != nil {

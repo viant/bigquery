@@ -35,9 +35,9 @@ func TestBuildType(t *testing.T) {
 				},
 			},
 			expect: []reflect.Type{
-				intType,
+				reflect.PtrTo(intType),
 				stringType,
-				boolType,
+				reflect.PtrTo(boolType),
 			},
 		},
 		{
@@ -65,7 +65,7 @@ func TestBuildType(t *testing.T) {
 			expect: []reflect.Type{
 				reflect.SliceOf(reflect.StructOf([]reflect.StructField{
 					{Name: "Key", Type: stringType, Tag: `json:"key"`},
-					{Name: "Value", Type: stringType, Tag: `json:"value,omitempty"`},
+					{Name: "Value", Type: reflect.PtrTo(stringType), Tag: `json:"value,omitempty"`},
 				})),
 			},
 		},
@@ -111,11 +111,11 @@ func TestBuildType(t *testing.T) {
 			expect: []reflect.Type{
 				reflect.StructOf([]reflect.StructField{
 					{Name: "Ts", Type: timeTypePtr, Tag: `json:"ts,omitempty"`},
-					{Name: "Ip", Type: stringType, Tag: `json:"ip,omitempty"`},
+					{Name: "Ip", Type: reflect.PtrTo(stringType), Tag: `json:"ip,omitempty"`},
 				}),
 				reflect.SliceOf(reflect.StructOf([]reflect.StructField{
 					{Name: "Key", Type: stringType, Tag: `json:"key"`},
-					{Name: "Value", Type: stringType, Tag: `json:"value,omitempty"`},
+					{Name: "Value", Type: reflect.PtrTo(stringType), Tag: `json:"value,omitempty"`},
 				})),
 			},
 		},
@@ -176,6 +176,5 @@ func assertFields(t *testing.T, expect reflect.StructField, actual reflect.Struc
 	if !assert.Equal(t, expect.Tag, actual.Tag, description) {
 		return false
 	}
-	assertType(t, expect.Type, actual.Type, description)
-	return true
+	return assertType(t, expect.Type, actual.Type, description)
 }
