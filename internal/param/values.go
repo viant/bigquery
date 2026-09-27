@@ -546,7 +546,7 @@ func NewStringPtrQueryParameter(name string, v *string) (*bigquery.QueryParamete
 			Value: value,
 		},
 	}
-	if value == "" {
+	if v != nil && value == "" {
 		result.ParameterValue.ForceSendFields = []string{"Value"}
 	}
 	return result, nil

@@ -1,9 +1,66 @@
 package bigquery
 
 import (
-	"github.com/stretchr/testify/assert"
+	"context"
+	"database/sql/driver"
+	"errors"
+	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/api/bigquery/v2"
+	"google.golang.org/api/option"
 )
+
+type parameterTestTransport struct {
+	requests int
+}
+
+func (t *parameterTestTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	t.requests++
+	return nil, errors.New("unexpected BigQuery request")
+}
+
+func TestStatement_QueryContextNilParameter(t *testing.T) {
+	var key *int
+	converted, err := driver.DefaultParameterConverter.ConvertValue(key)
+	require.NoError(t, err)
+	for _, tt := range []struct {
+		name  string
+		value interface{}
+	}{
+		{"untyped", nil},
+		{"converted pointer", converted},
+		{"unsupported pointer", (**int)(nil)},
+		{"unsupported slice", []interface{}(nil)},
+		{"unsupported struct pointer", (*struct{ ID int })(nil)},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			transport := &parameterTestTransport{}
+			service, err := bigquery.NewService(context.Background(), option.WithHTTPClient(&http.Client{Transport: transport}))
+			require.NoError(t, err)
+			stmt := &Statement{
+				projectID: "test-project",
+				service:   service,
+				job: &bigquery.Job{Configuration: &bigquery.JobConfiguration{
+					Query: &bigquery.JobConfigurationQuery{Query: "SELECT ?, ?, ?, ?, ?, ?, ?"},
+				}},
+			}
+			args := make([]driver.NamedValue, 7)
+			for i := range args {
+				args[i] = driver.NamedValue{Ordinal: i + 1, Value: "private-bound-value"}
+			}
+			args[6].Value = tt.value
+			rows, err := stmt.QueryContext(context.Background(), args)
+			require.Nil(t, rows)
+			require.ErrorContains(t, err, "failed to convert args to query parameters: query parameter at position 7:")
+			require.NotContains(t, err.Error(), "private-bound-value")
+			require.Zero(t, transport.requests)
+			require.Nil(t, stmt.job.Configuration.Query.QueryParameters)
+		})
+	}
+}
 
 func Test_CheckQueryParameters(t *testing.T) {
 	var testCases = []struct {

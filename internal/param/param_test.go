@@ -2,12 +2,106 @@ package param
 
 import (
 	"encoding/json"
-	"fmt"
+	"math/big"
+	"reflect"
 	"testing"
+	"time"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/api/bigquery/v2"
+	"github.com/stretchr/testify/require"
 )
+
+func TestParam_QueryParameterNil(t *testing.T) {
+	tests := []struct {
+		name  string
+		value interface{}
+	}{
+		{"untyped", nil},
+		{"struct pointer", (*struct{ ID int })(nil)},
+		{"pointer to pointer", (**int)(nil)},
+		{"interface pointer", (*interface{})(nil)},
+		{"slice pointer", (*[]int)(nil)},
+		{"unsupported slice", []interface{}(nil)},
+		{"unsupported non-nil slice", []interface{}{1}},
+		{"map", map[string]int(nil)},
+		{"channel", (chan int)(nil)},
+		{"function", (func())(nil)},
+		{"unsafe pointer", unsafe.Pointer(nil)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := New("key", tt.value).QueryParameter()
+			require.Error(t, err)
+			require.Nil(t, actual)
+			if tt.value == nil {
+				require.EqualError(t, err, "cannot encode untyped NULL query parameter: explicit BigQuery type required")
+			}
+		})
+	}
+}
+
+func TestParam_QueryParameterTypedNil(t *testing.T) {
+	for _, tt := range []struct {
+		value    interface{}
+		typeName string
+	}{
+		{(*bool)(nil), "BOOL"},
+		{(*int)(nil), "INT64"},
+		{(*int8)(nil), "INT64"},
+		{(*int16)(nil), "INT64"},
+		{(*int32)(nil), "INT64"},
+		{(*int64)(nil), "INT64"},
+		{(*uint)(nil), "INT64"},
+		{(*uint8)(nil), "INT64"},
+		{(*uint16)(nil), "INT64"},
+		{(*uint32)(nil), "INT64"},
+		{(*uint64)(nil), "INT64"},
+		{(*float32)(nil), "FLOAT64"},
+		{(*float64)(nil), "FLOAT64"},
+		{(*string)(nil), "STRING"},
+		{(*time.Time)(nil), "TIMESTAMP"},
+		{(*big.Rat)(nil), "BIGNUMERIC"},
+		{[]byte(nil), "BYTES"},
+	} {
+		t.Run(reflect.TypeOf(tt.value).String(), func(t *testing.T) {
+			actual, err := New("key", tt.value).QueryParameter()
+			require.NoError(t, err)
+			encoded, err := json.Marshal(actual)
+			require.NoError(t, err)
+			require.JSONEq(t, `{"name":"key","parameterType":{"type":"`+tt.typeName+`"},"parameterValue":{}}`, string(encoded))
+		})
+	}
+}
+
+func TestParam_QueryParameterNilSlice(t *testing.T) {
+	actual, err := New("key", []int(nil)).QueryParameter()
+	require.NoError(t, err)
+	empty, err := New("key", []int{}).QueryParameter()
+	require.NoError(t, err)
+	require.Equal(t, empty, actual)
+	require.Equal(t, "ARRAY", actual.ParameterType.Type)
+	require.Equal(t, "INT64", actual.ParameterType.ArrayType.Type)
+}
+
+func TestParam_QueryParameterZeroPointers(t *testing.T) {
+	for _, tt := range []struct {
+		value interface{}
+		want  string
+	}{
+		{new(int), `{"type":"INT64"},"parameterValue":{"value":"0"}`},
+		{new(bool), `{"type":"BOOL"},"parameterValue":{"value":"false"}`},
+		{new(string), `{"type":"STRING"},"parameterValue":{"value":""}`},
+	} {
+		t.Run(reflect.TypeOf(tt.value).String(), func(t *testing.T) {
+			actual, err := New("key", tt.value).QueryParameter()
+			require.NoError(t, err)
+			encoded, err := json.Marshal(actual)
+			require.NoError(t, err)
+			require.JSONEq(t, `{"name":"key","parameterType":`+tt.want+`}`, string(encoded))
+		})
+	}
+}
 
 func TestParam_QueryParameterNew(t *testing.T) {
 	var testCases = []struct {
@@ -74,13 +168,9 @@ func TestParam_QueryParameterNew(t *testing.T) {
 			continue
 		}
 
-		expect := &bigquery.QueryParameter{}
-		_ = json.Unmarshal([]byte(testCase.expect), expect)
-
-		if !assert.EqualValues(t, expect, queryParam, testCase.description) {
-			actual, _ := json.Marshal(queryParam)
-			fmt.Println(string(actual))
-		}
+		actual, err := json.Marshal(queryParam)
+		require.NoError(t, err, testCase.description)
+		assert.JSONEq(t, testCase.expect, string(actual), testCase.description)
 	}
 
 }

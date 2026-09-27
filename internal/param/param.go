@@ -3,7 +3,9 @@ package param
 import (
 	"fmt"
 	"google.golang.org/api/bigquery/v2"
+	"math/big"
 	"reflect"
+	"time"
 	"unsafe"
 )
 
@@ -30,13 +32,37 @@ type Param struct {
 // QueryParameter returns bigquery QueryParameter
 func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 	val := reflect.ValueOf(p.value)
-	var ptr reflect.Value
+	if !val.IsValid() {
+		return nil, fmt.Errorf("cannot encode untyped NULL query parameter: explicit BigQuery type required")
+	}
 	fn := values[val.Kind()]
-	ptr = reflect.New(val.Type())
-	ptr.Elem().Set(val)
-	if fn == nil {
+	if fn == nil || values[valueKey(val.Type())] == nil {
 		return nil, fmt.Errorf("unsupported type: %v", val.Type().String())
 	}
+	if val.Kind() == reflect.Ptr && val.IsNil() {
+		// Avoid unsafe pointer arithmetic on nil in the value encoders.
+		switch val.Type().Elem().Kind() {
+		case reflect.Bool:
+			return NewBoolPtrQueryParameter(p.Name, nil)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return NewIntPtrQueryParameter(p.Name, nil)
+		case reflect.Float32, reflect.Float64:
+			return NewFloatPtrQueryParameter(p.Name, nil)
+		case reflect.String:
+			return NewStringPtrQueryParameter(p.Name, nil)
+		case reflect.Struct:
+			switch val.Type().Elem() {
+			case reflect.TypeOf(time.Time{}):
+				return NewTimeQueryParameter(p.Name, nil)
+			case reflect.TypeOf(big.Rat{}):
+				return NewBigNumericQueryParameter(p.Name, nil)
+			}
+		}
+		return nil, fmt.Errorf("cannot encode nil query parameter of type %s: unsupported typed NULL", val.Type())
+	}
+	ptr := reflect.New(val.Type())
+	ptr.Elem().Set(val)
 	return fn(reflect.StructField{Name: p.Name, Type: val.Type()}, unsafe.Pointer(ptr.Pointer()))
 }
 
