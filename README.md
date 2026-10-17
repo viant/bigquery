@@ -409,3 +409,17 @@ all compatible with Apache License, Version 2. Please see individual files for d
 ## Credits and Acknowledgements
 
 **Library Author:** Adrian Witas
+
+### Local BigQuery emulator
+
+Use a per-connection opt-in with an explicit loopback HTTP endpoint:
+
+```text
+bigquery://ar-e2e/studies?emulator=true&endpoint=http%3A%2F%2F127.0.0.1%3A19050%2Fbigquery%2Fv2%2F
+```
+
+`emulator=true` disables authentication only for that connection. It requires
+`localhost` or a loopback IP and rejects credential/OAuth/API-key settings.
+Global driver credentials are not inherited by emulator connections. An endpoint
+override without `emulator=true` retains normal authentication behavior. This
+option does not translate SQL and does not establish production BigQuery parity.

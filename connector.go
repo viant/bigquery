@@ -30,6 +30,9 @@ func SetOptions(opts ...option.ClientOption) {
 
 // Connect connects to database
 func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
+	if err := c.cfg.validateEmulator(); err != nil {
+		return nil, err
+	}
 	options := c.cfg.options()
 
 	//If both OAuth2 token and config URLs are provided, build token source and use it.
@@ -52,13 +55,18 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 		tokenSourceProvided = true
 	}
 
-	if len(c.options) > 0 {
+	if c.cfg.Emulator {
+		// Emulator options belong only to this connector; never inherit credentials.
+	} else if len(c.options) > 0 {
 		options = append(options, c.options...)
 	} else if len(globalOptions) > 0 {
 		options = append(options, globalOptions...)
 	}
 
-	isAuthOpt := isAuth(options)
+	isAuthOpt := c.cfg.Emulator
+	if !isAuthOpt {
+		isAuthOpt = isAuth(options)
+	}
 	if tokenSourceProvided {
 		isAuthOpt = true
 	}

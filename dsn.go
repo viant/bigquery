@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/viant/scy"
 	"google.golang.org/api/option"
+	"net"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -38,6 +40,8 @@ const (
 // If a new Config is created instead of being parsed from a DSN string,
 // the NewConfig function should be used, which sets default values.
 type Config struct {
+	// Emulator permits unauthenticated access only to an explicit loopback HTTP endpoint.
+	Emulator        bool
 	CredentialsFile string // Username
 	Endpoint        string
 	APIKey          string
@@ -54,8 +58,8 @@ type Config struct {
 	App             string
 	OAuth2ConfigURL string
 	OAuth2TokenURL  string
-	Priority    string // Job priority: "INTERACTIVE" (default) or "BATCH"
-	Reservation string // Reservation for query jobs: "projects/{project}/locations/{location}/reservations/{reservation}"
+	Priority        string // Job priority: "INTERACTIVE" (default) or "BATCH"
+	Reservation     string // Reservation for query jobs: "projects/{project}/locations/{location}/reservations/{reservation}"
 	url.Values
 }
 
@@ -66,6 +70,9 @@ func (c *Config) hasCred() bool {
 
 func (c *Config) options() []option.ClientOption {
 	var result = make([]option.ClientOption, 0)
+	if c.Emulator {
+		return []option.ClientOption{option.WithEndpoint(c.Endpoint), option.WithoutAuthentication()}
+	}
 	if c.CredentialsFile != "" {
 		result = append(result, option.WithCredentialsFile(c.CredentialsFile))
 	}
@@ -163,6 +170,18 @@ func ParseDSN(dsn string) (*Config, error) {
 		}
 	}
 
+	if value, present := cfg.Values["emulator"]; present {
+		if len(value) != 1 {
+			return nil, fmt.Errorf("emulator must be specified once")
+		}
+		cfg.Emulator, err = strconv.ParseBool(value[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid emulator boolean")
+		}
+	}
+	if err = cfg.validateEmulator(); err != nil {
+		return nil, err
+	}
 	if cfg.CredentialsKey != "" {
 		if URL, err := base64.RawURLEncoding.DecodeString(cfg.CredentialsKey); err == nil {
 			cfg.CredentialsKey = string(URL)
@@ -249,3 +268,22 @@ func (r *credentialsRegistry) lookup(resource *scy.Resource) (string, error) {
 }
 
 var credentials = credentialsRegistry{registry: map[string]string{}, service: scy.New()}
+
+func (c *Config) validateEmulator() error {
+	if !c.Emulator {
+		return nil
+	}
+	endpoint, err := url.Parse(c.Endpoint)
+	if err != nil || endpoint.Scheme != "http" || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" {
+		return fmt.Errorf("emulator requires a loopback HTTP endpoint")
+	}
+	host := endpoint.Hostname()
+	ip := net.ParseIP(host)
+	if host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+		return fmt.Errorf("emulator requires a loopback HTTP endpoint")
+	}
+	if c.hasCred() || c.OAuth2ConfigURL != "" || c.OAuth2TokenURL != "" || c.APIKey != "" {
+		return fmt.Errorf("emulator cannot be combined with credentials")
+	}
+	return nil
+}
