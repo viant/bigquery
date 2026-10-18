@@ -11,13 +11,13 @@ import (
 
 // Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
-	queryMode      string
-	projectID      string
-	location       string
-	service        *bigquery.Service
-	job            *bigquery.Job
-	numInput       int
-	parameterNames []string
+	queryMode              string
+	emulatorParameterNames []string
+	projectID              string
+	location               string
+	service                *bigquery.Service
+	job                    *bigquery.Job
+	numInput               int
 }
 
 func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
@@ -130,7 +130,11 @@ func (s *Statement) CheckNamedValue(n *driver.NamedValue) error {
 }
 
 func (s *Statement) checkQueryParameters() {
-	//this is very basic parameter detection, need to be improved
+	if len(s.emulatorParameterNames) > 0 {
+		s.numInput = len(s.emulatorParameterNames)
+		return
+	}
+	// Retain the existing production parameter detection.
 	query := strings.ToLower(s.job.Configuration.Query.Query)
 	count := checkQueryParameters(query)
 	s.numInput = count

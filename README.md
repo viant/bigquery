@@ -424,6 +424,23 @@ Global driver credentials are not inherited by emulator connections. An endpoint
 override without `emulator=true` retains normal authentication behavior. This
 option does not translate SQL and does not establish production BigQuery parity.
 
+For an explicit emulator connection, the driver binds positional `?` tokens as
+generated named parameters. This avoids the emulator analyzer misordering repeated
+parameters around `IN` and date expressions. Quoted strings, identifiers and
+comments are preserved; query operations and types are unchanged. Production
+connections retain their existing parameter handling. Mixed named and positional
+parameters are rejected, as required by BigQuery.
+
+The optional local emulator regression creates no tables:
+
+```sh
+BIGQUERY_EMULATOR_TEST_DSN='bigquery://test-project/test?emulator=true&endpoint=http%3A%2F%2F127.0.0.1%3A9050%2Fbigquery%2Fv2%2F' \
+  go test -run '^TestEmulator' -count=1
+```
+
+The named project/dataset must exist in that local emulator. The test refuses a
+connector without the explicit emulator opt-in.
+
 ### Synchronous query submission
 
 Add `queryMode=sync` to a DSN to opt into BigQuery's `jobs.query` API for
