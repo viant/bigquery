@@ -11,6 +11,7 @@ import (
 
 // Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
+	queryMode      string
 	projectID      string
 	location       string
 	service        *bigquery.Service
@@ -96,6 +97,9 @@ func (s *Statement) QueryContext(ctx context.Context, args []driver.NamedValue) 
 func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter) (driver.Rows, error) {
 	if err := s.bindParameters(params); err != nil {
 		return nil, err
+	}
+	if request := s.synchronousRequest(); request != nil {
+		return s.querySynchronous(ctx, request)
 	}
 	job, err := s.submitJob(ctx)
 	if err != nil {

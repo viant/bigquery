@@ -87,6 +87,9 @@ func (c *ResultsCall) Do(opts ...googleapi.CallOption) (*Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parseJSON: %w, %s", err, c.session.Data)
 	}
+	if err := finalizeRows(c.session); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 

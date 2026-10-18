@@ -423,3 +423,15 @@ bigquery://ar-e2e/studies?emulator=true&endpoint=http%3A%2F%2F127.0.0.1%3A19050%
 Global driver credentials are not inherited by emulator connections. An endpoint
 override without `emulator=true` retains normal authentication behavior. This
 option does not translate SQL and does not establish production BigQuery parity.
+
+### Synchronous query submission
+
+Add `queryMode=sync` to a DSN to opt into BigQuery's `jobs.query` API for
+interactive SQL reads. Completed first-page results are consumed directly;
+pending jobs still poll for completion, and subsequent result pages retain
+normal job pagination. Query errors and cancellation are propagated. Submission
+is not automatically retried because SQL can contain mutations.
+
+The default remains `jobs.insert`. Batch queries, reservations and job options
+that cannot be represented by `QueryRequest` automatically use the existing
+job path, even when synchronous mode is requested. `Exec` is unchanged.

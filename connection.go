@@ -45,7 +45,7 @@ func (c *connection) PrepareContext(ctx context.Context, SQL string) (driver.Stm
 		return nil, err
 	}
 
-	stmt := &Statement{job: jobConfiguration, service: c.service, projectID: c.projectID, location: c.cfg.Location}
+	stmt := &Statement{queryMode: c.cfg.QueryMode, job: jobConfiguration, service: c.service, projectID: c.projectID, location: c.cfg.Location}
 	stmt.checkQueryParameters()
 	if c.cfg.Emulator {
 		query, names, err := emulatorParameters(stmt.job.Configuration.Query.Query)

@@ -41,7 +41,9 @@ const (
 // the NewConfig function should be used, which sets default values.
 type Config struct {
 	// Emulator permits unauthenticated access only to an explicit loopback HTTP endpoint.
-	Emulator        bool
+	Emulator bool
+	// QueryMode selects the optional synchronous query API; empty retains jobs.insert.
+	QueryMode       string
 	CredentialsFile string // Username
 	Endpoint        string
 	APIKey          string
@@ -126,6 +128,10 @@ func ParseDSN(dsn string) (*Config, error) {
 		Values:    URL.Query(),
 	}
 	if len(cfg.Values) > 0 {
+		cfg.QueryMode = cfg.Values.Get("queryMode")
+		if cfg.QueryMode != "" && cfg.QueryMode != "sync" {
+			return nil, fmt.Errorf("unsupported queryMode %q", cfg.QueryMode)
+		}
 		if _, ok := cfg.Values[endpoint]; ok {
 			cfg.Endpoint = cfg.Values.Get(endpoint)
 		}
