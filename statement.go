@@ -11,11 +11,12 @@ import (
 
 // Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
-	projectID string
-	location  string
-	service   *bigquery.Service
-	job       *bigquery.Job
-	numInput  int
+	projectID      string
+	location       string
+	service        *bigquery.Service
+	job            *bigquery.Job
+	numInput       int
+	parameterNames []string
 }
 
 func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
@@ -54,7 +55,9 @@ func (s *Statement) ExecContext(ctx context.Context, args []driver.NamedValue) (
 }
 
 func (s *Statement) exec(ctx context.Context, params []*bigquery.QueryParameter) (driver.Result, error) {
-	s.job.Configuration.Query.QueryParameters = params
+	if err := s.bindParameters(params); err != nil {
+		return nil, err
+	}
 	job, err := s.submitJob(ctx)
 	if err != nil {
 		return nil, err
@@ -91,7 +94,9 @@ func (s *Statement) QueryContext(ctx context.Context, args []driver.NamedValue) 
 }
 
 func (s *Statement) query(ctx context.Context, params []*bigquery.QueryParameter) (driver.Rows, error) {
-	s.job.Configuration.Query.QueryParameters = params
+	if err := s.bindParameters(params); err != nil {
+		return nil, err
+	}
 	job, err := s.submitJob(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w, SQL: %v", err, s.job.Configuration.Query.Query)
