@@ -28,3 +28,24 @@ func TestEmulatorJSONBindingPreservesSQLAndProduction(t *testing.T) {
 		require.NotContains(t, stmt.job.Configuration.Query.Query, "PARSE_JSON")
 	}
 }
+
+func TestEmulatorDateTimeBindingIsExplicitAndReusable(t *testing.T) {
+	for _, emulator := range []bool{true, false} {
+		conn := &connection{cfg: &Config{Emulator: emulator}, projectID: "p"}
+		prepared, err := conn.Prepare("SELECT ?, '?' AS literal")
+		require.NoError(t, err)
+		stmt := prepared.(*Statement)
+		value := &api.QueryParameter{ParameterType: &api.QueryParameterType{Type: "DATETIME"}, ParameterValue: &api.QueryParameterValue{Value: "2026-10-25 01:02:03.123456"}}
+		for range 2 {
+			require.NoError(t, stmt.bindParameters([]*api.QueryParameter{value}))
+			if emulator {
+				require.Equal(t, "SELECT CAST(@viant_emulator_p1 AS DATETIME), '?' AS literal", stmt.job.Configuration.Query.Query)
+				require.Equal(t, "STRING", stmt.job.Configuration.Query.QueryParameters[0].ParameterType.Type)
+			} else {
+				require.Equal(t, "SELECT ?, '?' AS literal", stmt.job.Configuration.Query.Query)
+				require.Equal(t, "DATETIME", stmt.job.Configuration.Query.QueryParameters[0].ParameterType.Type)
+			}
+		}
+		require.Equal(t, "DATETIME", value.ParameterType.Type)
+	}
+}

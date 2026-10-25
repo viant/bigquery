@@ -46,6 +46,12 @@ func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 	if !val.IsValid() {
 		return nil, fmt.Errorf("cannot encode untyped NULL query parameter: explicit BigQuery type required")
 	}
+	if typed, ok := val.Interface().(typedValue); ok {
+		if val.Kind() == reflect.Ptr && val.IsNil() {
+			return nil, fmt.Errorf("nil typed SQL parameter wrapper")
+		}
+		return typedParameter(p.Name, typed)
+	}
 	if raw, ok := val.Interface().(json.RawMessage); ok {
 		return jsonParameter(p.Name, raw)
 	}

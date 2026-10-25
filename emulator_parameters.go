@@ -15,7 +15,7 @@ func emulatorParameters(query string) (string, []string, error) {
 	return rewriteEmulatorParameters(query, nil)
 }
 
-func rewriteEmulatorParameters(query string, jsonNames map[string]bool) (string, []string, error) {
+func rewriteEmulatorParameters(query string, wrappers map[string]string) (string, []string, error) {
 	var out strings.Builder
 	var names []string
 	named := false
@@ -90,8 +90,12 @@ func rewriteEmulatorParameters(query string, jsonNames map[string]bool) (string,
 					end++
 				}
 				name := query[i+1 : end]
-				if jsonNames[name] {
-					out.WriteString("PARSE_JSON(" + query[i:end] + ")")
+				if function := wrappers[name]; function != "" {
+					if function == "DATETIME" {
+						out.WriteString("CAST(" + query[i:end] + " AS DATETIME)")
+					} else {
+						out.WriteString(function + "(" + query[i:end] + ")")
+					}
 				} else {
 					out.WriteString(query[i:end])
 				}
@@ -113,7 +117,7 @@ func rewriteEmulatorParameters(query string, jsonNames map[string]bool) (string,
 
 func (s *Statement) bindParameters(params []*bq.QueryParameter) error {
 	if len(s.emulatorParameterNames) == 0 {
-		return s.bindEmulatorJSON(params)
+		return s.bindEmulatorTypedParameters(params)
 	}
 	if len(params) != len(s.emulatorParameterNames) {
 		return fmt.Errorf("emulator parameter count: got %d, expected %d", len(params), len(s.emulatorParameterNames))
@@ -128,27 +132,32 @@ func (s *Statement) bindParameters(params []*bq.QueryParameter) error {
 		bound[i] = &clone
 	}
 	s.job.Configuration.Query.ParameterMode = "NAMED"
-	return s.bindEmulatorJSON(bound)
+	return s.bindEmulatorTypedParameters(bound)
 }
 
-// The emulator currently treats JSON parameters as STRING. Preserve JSON
-// semantics with PARSE_JSON only in emulator mode; production stays typed JSON.
-func (s *Statement) bindEmulatorJSON(params []*bq.QueryParameter) error {
+// The emulator misclassifies JSON and DATETIME parameters. Preserve their
+// semantics with typed constructors only in emulator mode; production retains
+// the original parameter types and SQL.
+func (s *Statement) bindEmulatorTypedParameters(params []*bq.QueryParameter) error {
 	if s.emulatorQuery == "" {
 		s.job.Configuration.Query.QueryParameters = params
 		return nil
 	}
 	bound := make([]*bq.QueryParameter, len(params))
-	names := map[string]bool{}
+	names := map[string]string{}
 	for i, p := range params {
 		if p == nil {
 			bound[i] = p
 			continue
 		}
 		clone := *p
-		if p.ParameterType != nil && p.ParameterType.Type == "JSON" {
+		if p.ParameterType != nil && (p.ParameterType.Type == "JSON" || p.ParameterType.Type == "DATETIME") {
 			clone.ParameterType = &bq.QueryParameterType{Type: "STRING"}
-			names[p.Name] = true
+			if p.ParameterType.Type == "JSON" {
+				names[p.Name] = "PARSE_JSON"
+			} else {
+				names[p.Name] = "DATETIME"
+			}
 		}
 		bound[i] = &clone
 	}
