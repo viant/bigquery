@@ -53,6 +53,7 @@ func (c *connection) PrepareContext(ctx context.Context, SQL string) (driver.Stm
 		}
 		jobConfiguration.Configuration.Query.Query = query
 		stmt.emulatorParameterNames = names
+		stmt.emulatorQuery = query
 	}
 	stmt.checkQueryParameters()
 	return stmt, nil

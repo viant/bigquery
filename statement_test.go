@@ -32,7 +32,7 @@ func TestStatement_QueryContextNilParameter(t *testing.T) {
 	}{
 		{"untyped", nil},
 		{"converted pointer", converted},
-		{"unsupported pointer", (**int)(nil)},
+		{"unsupported pointer", (**struct{ ID int })(nil)},
 		{"unsupported slice", []interface{}(nil)},
 		{"unsupported struct pointer", (*struct{ ID int })(nil)},
 	} {

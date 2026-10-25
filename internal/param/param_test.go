@@ -19,7 +19,6 @@ func TestParam_QueryParameterNil(t *testing.T) {
 	}{
 		{"untyped", nil},
 		{"struct pointer", (*struct{ ID int })(nil)},
-		{"pointer to pointer", (**int)(nil)},
 		{"interface pointer", (*interface{})(nil)},
 		{"slice pointer", (*[]int)(nil)},
 		{"unsupported slice", []interface{}(nil)},

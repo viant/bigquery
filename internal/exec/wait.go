@@ -47,11 +47,7 @@ func WaitForJobCompletion(ctx context.Context, service *bigquery.Service, projec
 			waitTime = maxWaitTime
 		}
 	}
-	if job != nil && job.Status != nil && job.Status.ErrorResult != nil {
-		errors, _ := json.Marshal(job.Status.Errors)
-		return job, fmt.Errorf("%v: %s", job.Status.ErrorResult.Message, errors)
-	}
-	return job, err
+	return job, JobError(job)
 }
 
 func cancelJob(service *bigquery.Service, projectID string, location, jobReferenceID string) {
@@ -61,4 +57,13 @@ func cancelJob(service *bigquery.Service, projectID string, location, jobReferen
 	cancelCall := service.Jobs.Cancel(projectID, jobReferenceID)
 	cancelCall.Location(location)
 	_, _ = cancelCall.Context(ctx).Do()
+}
+
+// JobError preserves terminal errors reported by either insertion or polling.
+func JobError(job *bigquery.Job) error {
+	if job != nil && job.Status != nil && job.Status.ErrorResult != nil {
+		details, _ := json.Marshal(job.Status.Errors)
+		return fmt.Errorf("%v: %s", job.Status.ErrorResult.Message, details)
+	}
+	return nil
 }

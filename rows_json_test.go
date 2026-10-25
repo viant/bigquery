@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -57,4 +58,29 @@ func TestRowsJSONDatabaseSQL(t *testing.T) {
 		require.Equal(t, len(values), index)
 		require.NoError(t, rows.Close())
 	}
+}
+
+func TestJSONParameterEmulator(t *testing.T) {
+	endpoint := os.Getenv("BIGQUERY_JSON_EMULATOR_ENDPOINT")
+	if endpoint == "" {
+		t.Skip("requires owned local emulator")
+	}
+	u, err := url.Parse(endpoint)
+	require.NoError(t, err)
+	require.Equal(t, "http", u.Scheme)
+	require.Equal(t, "127.0.0.1", u.Hostname())
+	db, err := sql.Open("bigquery", "bigquery://viant-imp-partners/uam_prod?emulator=true&queryMode=sync&endpoint="+url.QueryEscape(endpoint))
+	require.NoError(t, err)
+	defer db.Close()
+	raw := json.RawMessage(`{"id":9007199254741993,"enabled":false,"zero":0,"empty":[],"missing":null}`)
+	var got string
+	require.NoError(t, db.QueryRow("SELECT ? AS payload", raw).Scan(&got))
+	require.JSONEq(t, string(raw), got)
+	require.Contains(t, got, "9007199254741993")
+	var sqlNull any
+	require.NoError(t, db.QueryRow("SELECT ? AS payload", json.RawMessage(nil)).Scan(&sqlNull))
+	require.Nil(t, sqlNull)
+	var jsonNull string
+	require.NoError(t, db.QueryRow("SELECT ? AS payload", json.RawMessage("null")).Scan(&jsonNull))
+	require.Equal(t, "null", jsonNull)
 }

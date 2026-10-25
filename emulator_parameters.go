@@ -12,6 +12,10 @@ import (
 // The emulator can misorder positional inputs around IN and DATE expressions.
 // Only placeholder tokens change; SQL literals, identifiers and comments do not.
 func emulatorParameters(query string) (string, []string, error) {
+	return rewriteEmulatorParameters(query, nil)
+}
+
+func rewriteEmulatorParameters(query string, jsonNames map[string]bool) (string, []string, error) {
 	var out strings.Builder
 	var names []string
 	named := false
@@ -81,6 +85,18 @@ func emulatorParameters(query string) (string, []string, error) {
 			}
 			if i+1 < len(query) && ((query[i+1] >= 'a' && query[i+1] <= 'z') || (query[i+1] >= 'A' && query[i+1] <= 'Z') || query[i+1] == '_') {
 				named = true
+				end := i + 2
+				for end < len(query) && ((query[end] >= 'a' && query[end] <= 'z') || (query[end] >= 'A' && query[end] <= 'Z') || (query[end] >= '0' && query[end] <= '9') || query[end] == '_') {
+					end++
+				}
+				name := query[i+1 : end]
+				if jsonNames[name] {
+					out.WriteString("PARSE_JSON(" + query[i:end] + ")")
+				} else {
+					out.WriteString(query[i:end])
+				}
+				i = end
+				continue
 			}
 			out.WriteByte(query[i])
 			i++
@@ -97,8 +113,7 @@ func emulatorParameters(query string) (string, []string, error) {
 
 func (s *Statement) bindParameters(params []*bq.QueryParameter) error {
 	if len(s.emulatorParameterNames) == 0 {
-		s.job.Configuration.Query.QueryParameters = params
-		return nil
+		return s.bindEmulatorJSON(params)
 	}
 	if len(params) != len(s.emulatorParameterNames) {
 		return fmt.Errorf("emulator parameter count: got %d, expected %d", len(params), len(s.emulatorParameterNames))
@@ -113,6 +128,35 @@ func (s *Statement) bindParameters(params []*bq.QueryParameter) error {
 		bound[i] = &clone
 	}
 	s.job.Configuration.Query.ParameterMode = "NAMED"
+	return s.bindEmulatorJSON(bound)
+}
+
+// The emulator currently treats JSON parameters as STRING. Preserve JSON
+// semantics with PARSE_JSON only in emulator mode; production stays typed JSON.
+func (s *Statement) bindEmulatorJSON(params []*bq.QueryParameter) error {
+	if s.emulatorQuery == "" {
+		s.job.Configuration.Query.QueryParameters = params
+		return nil
+	}
+	bound := make([]*bq.QueryParameter, len(params))
+	names := map[string]bool{}
+	for i, p := range params {
+		if p == nil {
+			bound[i] = p
+			continue
+		}
+		clone := *p
+		if p.ParameterType != nil && p.ParameterType.Type == "JSON" {
+			clone.ParameterType = &bq.QueryParameterType{Type: "STRING"}
+			names[p.Name] = true
+		}
+		bound[i] = &clone
+	}
+	query, _, err := rewriteEmulatorParameters(s.emulatorQuery, names)
+	if err != nil {
+		return err
+	}
+	s.job.Configuration.Query.Query = query
 	s.job.Configuration.Query.QueryParameters = bound
 	return nil
 }

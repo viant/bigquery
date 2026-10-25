@@ -12,6 +12,7 @@ import (
 // Statement abstraction implements database/sql driver.Statement interface
 type Statement struct {
 	queryMode              string
+	emulatorQuery          string
 	emulatorParameterNames []string
 	projectID              string
 	location               string
@@ -34,6 +35,9 @@ func (s *Statement) submitJob(ctx context.Context) (*bigquery.Job, error) {
 		job, err = jobCall.Context(ctx).Do()
 		return err
 	}, 3)
+	if err == nil {
+		err = exec.JobError(job)
+	}
 	return job, err
 }
 

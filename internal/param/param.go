@@ -1,6 +1,8 @@
 package param
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"google.golang.org/api/bigquery/v2"
 	"math/big"
@@ -32,8 +34,45 @@ type Param struct {
 // QueryParameter returns bigquery QueryParameter
 func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 	val := reflect.ValueOf(p.value)
+	// SQLX binds addresses of nullable fields, yielding pointer chains. Keep
+	// the final typed pointer so a nil chain retains its BigQuery SQL type.
+	for val.IsValid() && val.Kind() == reflect.Ptr && val.Type().Elem().Kind() == reflect.Ptr {
+		if val.IsNil() {
+			val = reflect.Zero(val.Type().Elem())
+		} else {
+			val = val.Elem()
+		}
+	}
 	if !val.IsValid() {
 		return nil, fmt.Errorf("cannot encode untyped NULL query parameter: explicit BigQuery type required")
+	}
+	if raw, ok := val.Interface().(json.RawMessage); ok {
+		return jsonParameter(p.Name, raw)
+	}
+	if val.Kind() == reflect.Ptr && val.Type().Elem() == reflect.TypeFor[json.RawMessage]() {
+		if val.IsNil() {
+			return jsonParameter(p.Name, nil)
+		}
+		return jsonParameter(p.Name, val.Elem().Interface().(json.RawMessage))
+	}
+	if value, ok := val.Interface().(driver.Valuer); ok {
+		if val.Kind() == reflect.Ptr && val.IsNil() {
+			return nil, fmt.Errorf("cannot encode nil query parameter of type %s: explicit BigQuery type required", val.Type())
+		}
+		// JSON-aware SQL adapters retain JSON semantics without coupling the
+		// driver to their packages. Ordinary Valuers retain scalar behavior.
+		if marshaler, ok := value.(json.Marshaler); ok {
+			raw, err := marshaler.MarshalJSON()
+			if err != nil {
+				return nil, err
+			}
+			return jsonParameter(p.Name, raw)
+		}
+		scalar, err := value.Value()
+		if err != nil {
+			return nil, err
+		}
+		return New(p.Name, scalar).QueryParameter()
 	}
 	fn := values[val.Kind()]
 	if fn == nil || values[valueKey(val.Type())] == nil {
@@ -69,4 +108,16 @@ func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 // New creates a param
 func New(name string, value interface{}) *Param {
 	return &Param{Name: name, value: value}
+}
+
+func jsonParameter(name string, raw json.RawMessage) (*bigquery.QueryParameter, error) {
+	result := &bigquery.QueryParameter{Name: name, ParameterType: &bigquery.QueryParameterType{Type: "JSON"}, ParameterValue: &bigquery.QueryParameterValue{}}
+	if raw == nil {
+		return result, nil
+	}
+	if !json.Valid(raw) {
+		return nil, fmt.Errorf("invalid JSON query parameter")
+	}
+	result.ParameterValue.Value = string(raw)
+	return result, nil
 }
