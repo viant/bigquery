@@ -98,6 +98,13 @@ func (r *Rows) Next(dest []driver.Value) error {
 					value = nil
 				}
 			}
+			if aType == bytesPtrType {
+				if v, _ := value.(*[]byte); v != nil {
+					value = *v
+				} else {
+					value = nil
+				}
+			}
 		}
 		dest[i] = value
 	}
@@ -107,6 +114,7 @@ func (r *Rows) Next(dest []driver.Value) error {
 }
 
 var timePtrType = reflect.PtrTo(reflect.TypeOf(time.Time{}))
+var bytesPtrType = reflect.TypeOf((*[]byte)(nil))
 
 // hasNext returns true if there is next row to fetch.
 func (r *Rows) hasNext() bool {
