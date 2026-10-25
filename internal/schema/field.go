@@ -13,6 +13,8 @@ type FieldType string
 const (
 	// FieldTypeString is a string field type.
 	FieldTypeString FieldType = "STRING"
+	// FieldTypeJSON is returned by BigQuery as JSON-encoded text.
+	FieldTypeJSON FieldType = "JSON"
 	// FieldTypeBytes is a bytes field type.
 	FieldTypeBytes FieldType = "BYTES"
 	// FieldTypeInteger is a integer field type.
@@ -68,7 +70,7 @@ func mapBasicRawType(dataType string) (reflect.Type, error) {
 		return intType, nil
 	case FieldTypeBytes:
 		return bytesType, nil
-	case FieldTypeString:
+	case FieldTypeString, FieldTypeJSON:
 		return stringType, nil
 	case FieldTypeNumeric, FieldTypeFloat:
 		return float64Type, nil

@@ -79,7 +79,7 @@ func baseUnmarshaler(sourceType string, targetType reflect.Type) (func(dec *goja
 		default:
 			return nil, fmt.Errorf("unsupported binding type %v to %s", sourceType, targetType.String())
 		}
-	case "STRING":
+	case "STRING", "JSON":
 		switch targetType.Kind() {
 		case reflect.String:
 			return decodeValue[string](isPtr, decodeString), nil
