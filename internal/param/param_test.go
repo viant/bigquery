@@ -34,7 +34,7 @@ func TestParam_QueryParameterNil(t *testing.T) {
 			require.Error(t, err)
 			require.Nil(t, actual)
 			if tt.value == nil {
-				require.EqualError(t, err, "cannot encode untyped NULL query parameter: explicit BigQuery type required")
+				require.EqualError(t, err, `query parameter "key" has an untyped nil value: explicit BigQuery type required`)
 			}
 		})
 	}
@@ -172,4 +172,19 @@ func TestParam_QueryParameterNew(t *testing.T) {
 		assert.JSONEq(t, testCase.expect, string(actual), testCase.description)
 	}
 
+}
+
+func TestParam_QueryParameterRejectsUntypedNil(t *testing.T) {
+	queryParam, err := New("campaign_id", nil).QueryParameter()
+	assert.Nil(t, queryParam)
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), `query parameter "campaign_id" has an untyped nil value`)
+	}
+}
+
+func TestParam_QueryParameterRejectsNilReceiver(t *testing.T) {
+	var aParam *Param
+	queryParam, err := aParam.QueryParameter()
+	assert.Nil(t, queryParam)
+	assert.EqualError(t, err, "query parameter is nil")
 }

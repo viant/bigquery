@@ -33,6 +33,9 @@ type Param struct {
 
 // QueryParameter returns bigquery QueryParameter
 func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
+	if p == nil {
+		return nil, fmt.Errorf("query parameter is nil")
+	}
 	val := reflect.ValueOf(p.value)
 	// SQLX binds addresses of nullable fields, yielding pointer chains. Keep
 	// the final typed pointer so a nil chain retains its BigQuery SQL type.
@@ -44,7 +47,7 @@ func (p *Param) QueryParameter() (*bigquery.QueryParameter, error) {
 		}
 	}
 	if !val.IsValid() {
-		return nil, fmt.Errorf("cannot encode untyped NULL query parameter: explicit BigQuery type required")
+		return nil, fmt.Errorf("query parameter %q has an untyped nil value: explicit BigQuery type required", p.Name)
 	}
 	if typed, ok := val.Interface().(typedValue); ok {
 		if val.Kind() == reflect.Ptr && val.IsNil() {
