@@ -2,8 +2,6 @@ package exec
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"google.golang.org/api/bigquery/v2"
 	"time"
 )
@@ -62,8 +60,7 @@ func cancelJob(service *bigquery.Service, projectID string, location, jobReferen
 // JobError preserves terminal errors reported by either insertion or polling.
 func JobError(job *bigquery.Job) error {
 	if job != nil && job.Status != nil && job.Status.ErrorResult != nil {
-		details, _ := json.Marshal(job.Status.Errors)
-		return fmt.Errorf("%v: %s", job.Status.ErrorResult.Message, details)
+		return newTerminalJobError(job.Status)
 	}
 	return nil
 }
