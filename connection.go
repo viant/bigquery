@@ -96,7 +96,7 @@ func (c *connection) jobConfiguration(query string) (*bigquery.Job, error) {
 	}
 	if c.cfg.DatasetID != "" {
 		configQuery.DefaultDataset = &bigquery.DatasetReference{
-			ProjectId: c.projectID,
+			ProjectId: c.cfg.ProjectID,
 			DatasetId: c.cfg.DatasetID,
 		}
 	}

@@ -75,3 +75,39 @@ func TestJobConfiguration_Reservation(t *testing.T) {
 		})
 	}
 }
+
+func TestPreparedQueryKeepsDefaultDatasetAndJobProjectSeparate(t *testing.T) {
+	for _, fixture := range []struct {
+		name        string
+		jobProject  string
+		dataProject string
+		dataset     string
+	}{
+		{name: "same project", jobProject: "data", dataProject: "data", dataset: "records"},
+		{name: "separate job project", jobProject: "billing", dataProject: "data", dataset: "records"},
+		{name: "no default dataset", jobProject: "billing", dataProject: "data"},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			conn := &connection{projectID: fixture.jobProject, cfg: &Config{ProjectID: fixture.dataProject, DatasetID: fixture.dataset, Priority: PriorityInteractive}}
+			prepared, err := conn.PrepareContext(t.Context(), "SELECT 1")
+			if !assert.NoError(t, err) {
+				return
+			}
+			defer prepared.Close()
+			statement, ok := prepared.(*Statement)
+			if !assert.True(t, ok, "query must prepare a query statement") {
+				return
+			}
+			assert.Equal(t, fixture.jobProject, statement.projectID, "job submission must keep its connection-owned project")
+			dataset := statement.job.Configuration.Query.DefaultDataset
+			if fixture.dataset == "" {
+				assert.Nil(t, dataset)
+				return
+			}
+			if assert.NotNil(t, dataset) {
+				assert.Equal(t, fixture.dataProject, dataset.ProjectId, "unqualified tables must resolve in the configured data project")
+				assert.Equal(t, fixture.dataset, dataset.DatasetId)
+			}
+		})
+	}
+}
