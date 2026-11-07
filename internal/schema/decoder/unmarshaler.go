@@ -227,8 +227,8 @@ func decodeTimeUnix(dec *gojay.Decoder) (int32, bool, error) {
 }
 
 func decodeDate(dec *gojay.Decoder) (time.Time, bool, error) {
-	v := ""
-	if err := dec.String(&v); err != nil {
+	v, present, err := decodeString(dec)
+	if err != nil || !present {
 		return time.Time{}, false, err
 	}
 	if v == "" {
@@ -249,8 +249,8 @@ var dateTimeLayouts = []string{
 }
 
 func decodeDateTime(dec *gojay.Decoder) (time.Time, bool, error) {
-	v := ""
-	if err := dec.String(&v); err != nil {
+	v, present, err := decodeString(dec)
+	if err != nil || !present {
 		return time.Time{}, false, err
 	}
 	if v == "" {
@@ -283,8 +283,8 @@ var timeOfDayLayouts = []string{
 }
 
 func decodeTimeOfDay(dec *gojay.Decoder) (time.Time, bool, error) {
-	v := ""
-	if err := dec.String(&v); err != nil {
+	v, present, err := decodeString(dec)
+	if err != nil || !present {
 		return time.Time{}, false, err
 	}
 	if v == "" {
