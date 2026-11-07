@@ -25,6 +25,7 @@ const (
 	userAgent          = "ua"
 	apiKey             = "apiKey"
 	quotaProject       = "quotaProject"
+	jobProject         = "jobProject"
 	scopes             = "scopes"
 	app                = "app"
 	defaultApp         = "go-sql-bq"
@@ -55,6 +56,7 @@ type Config struct {
 	ProjectID       string // project ID
 	DatasetID       string
 	QuotaProject    string
+	JobProject      string
 	Scopes          []string
 	Location        string
 	App             string
@@ -164,6 +166,9 @@ func ParseDSN(dsn string) (*Config, error) {
 		}
 		if _, ok := cfg.Values[quotaProject]; ok {
 			cfg.QuotaProject = cfg.Values.Get(quotaProject)
+		}
+		if _, ok := cfg.Values[jobProject]; ok {
+			cfg.JobProject = cfg.Values.Get(jobProject)
 		}
 		if _, ok := cfg.Values[scopes]; ok {
 			cfg.Scopes = cfg.Values[scopes]

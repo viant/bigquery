@@ -76,6 +76,24 @@ func TestJobConfiguration_Reservation(t *testing.T) {
 	}
 }
 
+func TestJobConfiguration_DefaultDatasetUsesDataProject(t *testing.T) {
+	cfg := &Config{
+		ProjectID:  "dataproject",
+		JobProject: "billingproject",
+		DatasetID:  "metrics",
+		Priority:   PriorityInteractive,
+	}
+	conn := &connection{cfg: cfg, projectID: cfg.JobProject}
+	job, err := conn.jobConfiguration("SELECT 1")
+	if !assert.NoError(t, err) {
+		return
+	}
+	if assert.NotNil(t, job.Configuration.Query.DefaultDataset) {
+		assert.Equal(t, "dataproject", job.Configuration.Query.DefaultDataset.ProjectId)
+		assert.Equal(t, "metrics", job.Configuration.Query.DefaultDataset.DatasetId)
+	}
+}
+
 func TestPreparedQueryKeepsDefaultDatasetAndJobProjectSeparate(t *testing.T) {
 	for _, fixture := range []struct {
 		name        string

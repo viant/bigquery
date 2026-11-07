@@ -31,12 +31,31 @@ The BigQuery driver accepts the following DSN
     - userAgent
     - apiKey
     - quotaProject
+    - jobProject: optional project used to submit query jobs; the DSN project still resolves the default dataset. Omit to preserve existing behavior.
     - scopes
 
 Since this library uses [Google Cloud API](google.golang.org/api/bigquery/v2)
 you can pass your credentials via GOOGLE_APPLICATION_CREDENTIALS environment variable when no credentials are configured in the DSN or via `SetOptions`.
 
 When `credURL`, `credJSON`, or `SetOptions`/`WithCredentialsJSON` is used, `GOOGLE_APPLICATION_CREDENTIALS` is not required.
+
+### User application-default credentials
+
+For local user authentication, set `GOOGLE_APPLICATION_CREDENTIALS` to an existing
+Google application-default credential file and omit `credURL`, `credJSON`, and
+other explicit authentication options from the DSN. The native Google client
+handles token refresh; no browser login is initiated by the driver.
+
+`bigquery://data-project/dataset?jobProject=job-project` keeps source dataset
+resolution in `data-project` while submitting query jobs in the explicitly selected
+`job-project`. The caller must already have the required permissions in both. Streaming and load
+ingestion retain their original data-project behavior.
+
+BigQuery's native query-cache default is retained. The existing query hint can
+explicitly enable or disable it, for example
+`SELECT /*+ {"useQueryCache": false} +*/ 1`. Both ordinary job submission and
+opt-in synchronous queries preserve this setting. Cache eligibility and freshness
+remain controlled by BigQuery.
 
 ## Usage:
 

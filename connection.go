@@ -34,7 +34,7 @@ func (c *connection) PrepareContext(ctx context.Context, SQL string) (driver.Stm
 
 	if c.isIngestion(SQL) {
 		return &ingestionStatement{
-			service: ingestion.NewService(c.service, c.projectID, c.cfg.DatasetID, c.cfg.Location),
+			service: ingestion.NewService(c.service, c.cfg.ProjectID, c.cfg.DatasetID, c.cfg.Location),
 			ctx:     ctx,
 			SQL:     SQL,
 		}, nil

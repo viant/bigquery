@@ -96,7 +96,12 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 		ctx:       ctx,
 		service:   service,
 		cfg:       c.cfg,
-		projectID: c.cfg.ProjectID,
+		projectID: func() string {
+			if c.cfg.JobProject != "" {
+				return c.cfg.JobProject
+			}
+			return c.cfg.ProjectID
+		}(),
 	}, nil
 }
 

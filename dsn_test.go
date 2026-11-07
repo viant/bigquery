@@ -71,6 +71,18 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
+			description: "DSN with explicit job project",
+			dsn:         "bigquery://dataproject/us/mydataset?jobProject=billingproject",
+			expect: Config{
+				ProjectID:  "dataproject",
+				JobProject: "billingproject",
+				DatasetID:  "mydataset",
+				Location:   "us",
+				App:        defaultApp,
+				Priority:   PriorityInteractive,
+			},
+		},
+		{
 			description: "invalid scheme",
 			dsn:         "postgres://myproject/mydataset",
 			expectError: true,
@@ -88,6 +100,7 @@ func TestParseDSN(t *testing.T) {
 				return
 			}
 			assert.Equal(t, tc.expect.ProjectID, cfg.ProjectID)
+			assert.Equal(t, tc.expect.JobProject, cfg.JobProject)
 			assert.Equal(t, tc.expect.DatasetID, cfg.DatasetID)
 			assert.Equal(t, tc.expect.Location, cfg.Location)
 			assert.Equal(t, tc.expect.Priority, cfg.Priority)
