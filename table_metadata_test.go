@@ -29,7 +29,7 @@ func TestConnectionTableMetadata(t *testing.T) {
 	defer server.Close()
 	service, err := api.NewService(context.Background(), option.WithEndpoint(server.URL+"/"), option.WithoutAuthentication())
 	require.NoError(t, err)
-	c := &connection{projectID: "billing", cfg: &Config{ProjectID: "default-source", DatasetID: "default-data", JobProject: "billing"}, service: service}
+	c := &connection{projectID: "billing", cfg: &Config{ProjectID: "default-source", DatasetID: "default-data"}, service: service}
 	table, err := c.TableMetadata(context.Background(), "source", "data", "records")
 	require.NoError(t, err)
 	require.Len(t, table.Schema.Fields[1].Fields, 1)
