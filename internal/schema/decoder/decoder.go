@@ -76,7 +76,7 @@ func newJSONUnmarshaler(field *bigquery.TableFieldSchema, dest reflect.Type) (ne
 	switch field.Mode {
 	case "REPEATED":
 		return newValueSliceUnmarshaler(field, dest)
-	case "NULLABLE":
+	case "NULLABLE", "REQUIRED":
 		if field.Type == "RECORD" {
 			return newRecordUnmarshaler(field, dest)
 		}
